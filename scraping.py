@@ -11,15 +11,27 @@ from newspaper import Article
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # ------------------------ CONFIG ------------------------ #
-LANDING_PAGE_URL = "https://www.aktuality.sk"  # The main news page
-URL_PATTERNS = ["/clanok/"]                    # Patterns in link HREF to filter for articles
-PROCESSED_URLS_FILE = "processed_urls.json"    # File to keep track of processed article URLs
-SCRAPED_ARTICLES_FILE = "scraped_articles.json"# File to store article data
+LANDING_PAGES = [
+    {
+        "url": "https://pravda.sk/",
+        "patterns": ["/clanok/"]
+    },
+    {
+        "url": "https://www.aktuality.sk",
+        "patterns": ["/clanok/"]
+    },
+    {
+        "url": "https://domov.sme.sk/",
+        "patterns": ["/c/"]
+    }
+]
+PROCESSED_URLS_FILE = "data/urls.json"    # File to keep track of processed article URLs
+SCRAPED_ARTICLES_FILE = "data/scraped.json"  # File to store article data
 # -------------------------------------------------------- #
 
 def load_processed_urls():
     """
-    Loads processed article URLs from JSON file into a Python set.
+    Loads processed article URLs from JSON file into a Python set. 
     Returns an empty set if the file doesn't exist or is invalid.
     """
     if not os.path.exists(PROCESSED_URLS_FILE):
@@ -67,9 +79,9 @@ def save_scraped_articles(articles_data):
     except Exception as e:
         logging.error(f"Failed to save to {SCRAPED_ARTICLES_FILE}: {e}")
 
-def get_landing_page_links(url):
+def get_landing_page_links(url, patterns):
     """
-    Fetches the landing page and finds links that match the URL_PATTERNS.
+    Fetches the landing page and finds links that match the given URL patterns.
     Returns a list of absolute URLs.
     """
     try:
@@ -90,7 +102,7 @@ def get_landing_page_links(url):
         href = a_tag["href"]
 
         # Check if this link matches our patterns
-        if any(pattern in href for pattern in URL_PATTERNS):
+        if any(pattern in href for pattern in patterns):
             # Convert to absolute if needed
             if href.startswith("/"):
                 full_url = scheme_and_domain + href
@@ -112,20 +124,47 @@ def parse_article(url):
         article.download()
         article.parse()
 
+        # logika pre najdenie zdroja obrazku
+        soup = BeautifulSoup(article.html, "html.parser")
+        image_source = ""
+        # hladanie zdroja obrazku podla URL
+        if "aktuality.sk" in url:
+            # Pre aktuality  <span> with class 'img-source'
+            source_elem = soup.find("span", class_="img-source")
+            if source_elem:
+                image_source = source_elem.get_text(strip=True)
+        elif "sme.sk" in url:
+            # Pre sme <small> tag
+            source_elem = soup.find("small")
+            if source_elem:
+                image_source = source_elem.get_text(strip=True)
+        
+        if not image_source:
+            figcaptions = soup.find_all("figcaption")
+            for fc in figcaptions:
+                text = fc.get_text(strip=True)
+                if "source" in text.lower() or "zdroj" in text.lower():
+                    image_source = text
+                    break
+
+        # Extract the top image and list of images from the article
+        # newspaper3k provides 'top_image' as the most representative image
+        # and 'images' as a set of image URLs found in the article
+        top_image = article.top_image if article.top_image else ""
+        # Extract video URLs if any
+        videos = article.movies if article.movies else []
+
         data = {
             "url": url,
             "title": article.title or "No Title",
-            "authors": article.authors or ["Unknown Author"],
             "publish_date": (article.publish_date.strftime("%Y-%m-%d %H:%M:%S") 
-                             if article.publish_date else "Unknown Date"),
+                            if article.publish_date else "Unknown Date"),
             "text": article.text or "No Content",
+            "top_image": top_image,
+            "image_source": image_source,
+            "videos": videos,  # Added video links
             "scraped_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-
-        # Optionally run NLP
-        #article.nlp()
-        #data["summary"] = article.summary
-        #data["keywords"] = article.keywords
 
         return data
 
@@ -133,48 +172,56 @@ def parse_article(url):
         logging.error(f"Failed to parse article at {url}: {e}")
         return None
 
-def scrape_for_new_articles(landing_page_url):
+def scrape_for_new_articles(max_articles=None):
     """
     - Loads previously processed URLs.
-    - Gets new links from the landing page.
-    - For each link, checks if it's already processed.
-      - If not, parse with newspaper3k and store the result.
+    - Iterates through each landing page in LANDING_PAGES.
+      - Gets new links from the landing page using its specific URL patterns.
+      - For each link, checks if it's already processed.
+        - If not, parse with newspaper3k and store the result.
     - Saves updated processed URLs and article data to JSON.
+    - If max_articles is provided, process at most that many articles.
     """
-
-    # 1. Load previously processed URLs and existing articles
     processed_urls = load_processed_urls()
     articles_data = load_scraped_articles()
+    articles_count = 0  # Counter for the number of successfully scraped articles
 
-    # 2. Get current article links from the landing page
-    current_links = get_landing_page_links(landing_page_url)
+    for page in LANDING_PAGES:
+        landing_url = page["url"]
+        patterns = page["patterns"]
+        logging.info(f"Processing landing page: {landing_url} with patterns {patterns}")
 
-    # 3. Filter new links
-    new_links = [link for link in current_links if link not in processed_urls]
-    logging.info(f"Number of new articles found: {len(new_links)}")
+        current_links = get_landing_page_links(landing_url, patterns)
+        new_links = [link for link in current_links if link not in processed_urls]
+        logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
 
-    # 4. Parse each new link
-    for link in new_links:
-        article_data = parse_article(link)
-        if article_data:
-            articles_data.append(article_data)
-            # Mark this link as processed
+        for link in new_links:
+            # If max_articles is specified and we've reached the limit, break out of the loop
+            if max_articles is not None and articles_count >= max_articles:
+                break
+
+            article_data = parse_article(link)
+            # Check if article_data exists and its 'text' field is non-empty after stripping whitespace
+            if article_data and article_data.get("text", "").strip():
+                articles_data.append(article_data)
+                logging.info(f"New article scraped: {article_data['title'][:50]}...")
+                articles_count += 1
+            else:
+                logging.info(f"Article from {link} has no text, marking as processed and skipping saving article data.")
+            # Mark the URL as processed regardless of whether valid article data was retrieved
             processed_urls.add(link)
-            # Log a short snippet of the title to keep track
-            logging.info(f"New article scraped: {article_data['title'][:50]}...")
+            time.sleep(1)  # Delay to respect site's resources
 
-        # Optional: short delay to respect the site's resources
-        time.sleep(1)
+        # Check after processing a landing page if the limit has been reached
+        if max_articles is not None and articles_count >= max_articles:
+            break
 
-    # 5. Save updated data
     save_scraped_articles(articles_data)
     save_processed_urls(processed_urls)
-
-    # Optionally return new articles, or just return the entire data
     return articles_data
 
 if __name__ == "__main__":
     # You can call this function once, or schedule it to run periodically.
-    updated_articles = scrape_for_new_articles(LANDING_PAGE_URL)
+    updated_articles = scrape_for_new_articles(10)
     # For demonstration, print how many total articles we have after this run
     logging.info(f"Total articles stored so far: {len(updated_articles)}")

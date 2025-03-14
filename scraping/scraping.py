@@ -46,9 +46,7 @@ def load_processed_urls():
         return set()
 
 def save_processed_urls(processed_urls):
-    """
-    Saves the set of processed URLs to a JSON file.
-    """
+
     try:
         with open(PROCESSED_URLS_FILE, "w", encoding="utf-8") as f:
             json.dump(list(processed_urls), f, ensure_ascii=False, indent=4)
@@ -95,7 +93,6 @@ def get_landing_page_links(url, patterns):
     all_links = []
 
     # Identify domain for absolute URL creation
-    # e.g., "https://example.com"
     scheme_and_domain = url.split("//")[0] + "//" + url.split("//")[1].split("/")[0]
 
     for a_tag in soup.find_all("a", href=True):
@@ -165,13 +162,15 @@ def scrape_for_new_articles(max_articles=None):
                 break
 
             article_data = parse_article(link)
-            # Check if article_data exists and its 'text' field is non-empty after stripping whitespace
-            if article_data and article_data.get("text", "").strip():
+            # Retrieve and clean the article text
+            text_content = article_data.get("text", "").strip() if article_data else ""
+            # Check if article_data exists, text is non-empty, and not equal to the default "No Content"
+            if article_data and text_content and text_content.lower() != "no content":
                 articles_data.append(article_data)
                 logging.info(f"New article scraped: {article_data['title'][:50]}...")
                 articles_count += 1
             else:
-                logging.info(f"Article from {link} has no text, marking as processed and skipping saving article data.")
+                logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
             # Mark the URL as processed regardless of whether valid article data was retrieved
             processed_urls.add(link)
             time.sleep(1)  # Delay to respect site's resources

@@ -25,8 +25,8 @@ LANDING_PAGES = [
         "patterns": ["/c/"]
     }
 ]
-PROCESSED_URLS_FILE = "data/urls.json"    # File to keep track of processed article URLs
-SCRAPED_ARTICLES_FILE = "data/scraped.json"  # File to store article data
+PROCESSED_URLS_FILE = "../data/urls.json"    # File to keep track of processed article URLs
+SCRAPED_ARTICLES_FILE = "../data/scraped.json"  # File to store article data
 # -------------------------------------------------------- #
 
 def load_processed_urls():
@@ -124,32 +124,6 @@ def parse_article(url):
         article.download()
         article.parse()
 
-        # logika pre najdenie zdroja obrazku
-        soup = BeautifulSoup(article.html, "html.parser")
-        image_source = ""
-        # hladanie zdroja obrazku podla URL
-        if "aktuality.sk" in url:
-            # Pre aktuality  <span> with class 'img-source'
-            source_elem = soup.find("span", class_="img-source")
-            if source_elem:
-                image_source = source_elem.get_text(strip=True)
-        elif "sme.sk" in url:
-            # Pre sme <small> tag
-            source_elem = soup.find("small")
-            if source_elem:
-                image_source = source_elem.get_text(strip=True)
-        
-        if not image_source:
-            figcaptions = soup.find_all("figcaption")
-            for fc in figcaptions:
-                text = fc.get_text(strip=True)
-                if "source" in text.lower() or "zdroj" in text.lower():
-                    image_source = text
-                    break
-
-        # Extract the top image and list of images from the article
-        # newspaper3k provides 'top_image' as the most representative image
-        # and 'images' as a set of image URLs found in the article
         top_image = article.top_image if article.top_image else ""
         # Extract video URLs if any
         videos = article.movies if article.movies else []
@@ -161,7 +135,6 @@ def parse_article(url):
                             if article.publish_date else "Unknown Date"),
             "text": article.text or "No Content",
             "top_image": top_image,
-            "image_source": image_source,
             "videos": videos,  # Added video links
             "scraped_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
@@ -173,15 +146,6 @@ def parse_article(url):
         return None
 
 def scrape_for_new_articles(max_articles=None):
-    """
-    - Loads previously processed URLs.
-    - Iterates through each landing page in LANDING_PAGES.
-      - Gets new links from the landing page using its specific URL patterns.
-      - For each link, checks if it's already processed.
-        - If not, parse with newspaper3k and store the result.
-    - Saves updated processed URLs and article data to JSON.
-    - If max_articles is provided, process at most that many articles.
-    """
     processed_urls = load_processed_urls()
     articles_data = load_scraped_articles()
     articles_count = 0  # Counter for the number of successfully scraped articles

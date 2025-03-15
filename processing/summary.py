@@ -1,12 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import List
-import logging
-import json
 import openai
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+
 
 load_dotenv()
 
@@ -59,46 +57,3 @@ def process_article(article_text: str):
     )
     # Return the parsed Pydantic model
     return response.choices[0].message.parsed.model_dump()
-
-
-def main():
-    scraped_file = "../data/scraped.json"
-    processed_file = "../data/processed.json"
-
-    try:
-        with open(scraped_file, "r", encoding="utf-8") as f:
-            articles = json.load(f)
-    except Exception as e:
-        logging.error(f"Failed to load scraped articles: {e}")
-        return
-
-    processed_articles = []
-    for article in articles:
-        text = article.get("text", "")
-        if text.strip():
-            logging.info(f"Processing article: {article.get('title', 'No Title')}")
-            try:
-                processed = process_article(text)
-            except Exception as e:
-                logging.error(f"Error processing article: {e}")
-                processed = {"error": str(e)}
-        else:
-            logging.info("Article text is empty, skipping processing.")
-
-        new_article = {
-            "url": article.get("url", ""),
-            "top_image": article.get("top_image", ""),
-            **processed,
-            "last_modified": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        processed_articles.append(new_article)
-
-    try:
-        with open(processed_file, "w", encoding="utf-8") as f:
-            json.dump(processed_articles, f, ensure_ascii=False, indent=4)
-        logging.info(f"Processed articles saved to {processed_file}")
-    except Exception as e:
-        logging.error(f"Failed to save processed articles: {e}")
-
-if __name__ == "__main__":
-    main()

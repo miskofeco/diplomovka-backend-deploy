@@ -13,18 +13,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # ------------------------ CONFIG ------------------------ #
 # Hospodarske noviny, hlavnespravy.sk, trend.sk, noviny.sk, topky.sk, novycas.sk
 LANDING_PAGES = [
-    {
-        "url": "https://pravda.sk/",
-        "patterns": ["/clanok/"]
-    },
+    #{
+    #    "url": "https://pravda.sk/",
+    #    "patterns": ["/clanok/"]
+    #},
     {
         "url": "https://www.aktuality.sk",
         "patterns": ["/clanok/"]
     },
-    {
-        "url": "https://domov.sme.sk/",
-        "patterns": ["/c/"]
-    }
+    #{
+    #    "url": "https://domov.sme.sk/",
+    #    "patterns": ["/c/"]
+    #}
 ]
 PROCESSED_URLS_FILE = "../data/urls.json"    # File to keep track of processed article URLs
 SCRAPED_ARTICLES_FILE = "../data/scraped.json"  # File to store article data
@@ -53,30 +53,6 @@ def save_processed_urls(processed_urls):
             json.dump(list(processed_urls), f, ensure_ascii=False, indent=4)
     except Exception as e:
         logging.error(f"Failed to save to {PROCESSED_URLS_FILE}: {e}")
-
-def load_scraped_articles():
-    """
-    Loads already scraped article data from a JSON file.
-    Returns a list if found, else an empty list.
-    """
-    if not os.path.exists(SCRAPED_ARTICLES_FILE):
-        return []
-    try:
-        with open(SCRAPED_ARTICLES_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        logging.error(f"Failed to load {SCRAPED_ARTICLES_FILE}: {e}")
-        return []
-
-def save_scraped_articles(articles_data):
-    """
-    Saves article data to a JSON file.
-    """
-    try:
-        with open(SCRAPED_ARTICLES_FILE, "w", encoding="utf-8") as f:
-            json.dump(articles_data, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        logging.error(f"Failed to save to {SCRAPED_ARTICLES_FILE}: {e}")
 
 def get_landing_page_links(url, patterns):
     """
@@ -143,9 +119,9 @@ def parse_article(url):
         logging.error(f"Failed to parse article at {url}: {e}")
         return None
 
-def scrape_for_new_articles(max_articles=None):
+def scrape_for_new_articles():
     processed_urls = load_processed_urls()
-    articles_data = load_scraped_articles()
+    new_articles = [] 
     articles_count = 0  # Counter for the number of successfully scraped articles
 
     for page in LANDING_PAGES:
@@ -158,16 +134,13 @@ def scrape_for_new_articles(max_articles=None):
         logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
 
         for link in new_links:
-            # If max_articles is specified and we've reached the limit, break out of the loop
-            if max_articles is not None and articles_count >= max_articles:
-                break
 
             article_data = parse_article(link)
             # Retrieve and clean the article text
             text_content = article_data.get("text", "").strip() if article_data else ""
             # Check if article_data exists, text is non-empty, and not equal to the default "No Content"
             if article_data and text_content and text_content.lower() != "no content":
-                articles_data.append(article_data)
+                new_articles.append(article_data)
                 logging.info(f"New article scraped: {article_data['title'][:50]}...")
                 articles_count += 1
             else:
@@ -176,16 +149,6 @@ def scrape_for_new_articles(max_articles=None):
             processed_urls.add(link)
             time.sleep(1)  # Delay to respect site's resources
 
-        # Check after processing a landing page if the limit has been reached
-        if max_articles is not None and articles_count >= max_articles:
-            break
 
-    save_scraped_articles(articles_data)
     save_processed_urls(processed_urls)
-    return articles_data
-
-if __name__ == "__main__":
-    # You can call this function once, or schedule it to run periodically.
-    updated_articles = scrape_for_new_articles(10)
-    # For demonstration, print how many total articles we have after this run
-    logging.info(f"Total articles stored so far: {len(updated_articles)}")
+    return new_articles

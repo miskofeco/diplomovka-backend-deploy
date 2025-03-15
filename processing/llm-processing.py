@@ -79,17 +79,16 @@ def main():
             logging.info(f"Processing article: {article.get('title', 'No Title')}")
             try:
                 processed = process_article(text)
-                article["processed_text"] = processed
             except Exception as e:
                 logging.error(f"Error processing article: {e}")
-                article["processed_text"] = {"error": str(e)}
+                processed = {"error": str(e)}
         else:
             logging.info("Article text is empty, skipping processing.")
 
         new_article = {
             "url": article.get("url", ""),
             "top_image": article.get("top_image", ""),
-            "processed_text": article.get("processed_text", {}),
+            **processed,
             "last_modified": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         processed_articles.append(new_article)

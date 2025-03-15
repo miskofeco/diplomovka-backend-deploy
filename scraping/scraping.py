@@ -11,6 +11,7 @@ from newspaper import Article
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # ------------------------ CONFIG ------------------------ #
+# Hospodarske noviny, hlavnespravy.sk, trend.sk, noviny.sk, topky.sk, novycas.sk
 LANDING_PAGES = [
     {
         "url": "https://pravda.sk/",

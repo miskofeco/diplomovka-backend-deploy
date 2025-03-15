@@ -26,8 +26,7 @@ LANDING_PAGES = [
     #    "patterns": ["/c/"]
     #}
 ]
-PROCESSED_URLS_FILE = "../data/urls.json"    # File to keep track of processed article URLs
-SCRAPED_ARTICLES_FILE = "../data/scraped.json"  # File to store article data
+PROCESSED_URLS_FILE = "./data/urls.json"    # File to keep track of processed article URLs
 # -------------------------------------------------------- #
 
 def load_processed_urls():

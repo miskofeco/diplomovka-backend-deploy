@@ -7,8 +7,8 @@ import openai
 from openai import OpenAI
 
 # Files for the FAISS index and ID mapping
-INDEX_FILE = "../data/faiss_index.index"
-MAPPING_FILE = "../data/id_mapping.json"
+INDEX_FILE = "./data/faiss_index.index"
+MAPPING_FILE = "./data/id_mapping.json"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI()
 

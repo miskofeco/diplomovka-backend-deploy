@@ -44,7 +44,7 @@ def process_new_articles():
             logging.info(f"Article {article['id']} has no summary for embedding.")
 
     # Append new processed articles to processed.json
-    processed_file = "../data/processed.json"
+    processed_file = "./data/processed.json"
     if os.path.exists(processed_file):
         with open(processed_file, "r", encoding="utf-8") as f:
             existing = json.load(f)

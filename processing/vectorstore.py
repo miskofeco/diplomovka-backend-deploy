@@ -6,11 +6,16 @@ import os
 from sqlalchemy.orm import Session
 from data.db import SessionLocal
 from sqlalchemy import text as tx
+import os 
+from dotenv import load_dotenv
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI()
+load_dotenv()
 
-# %%
+if api_key := os.getenv("OPENAI_API_KEY"):
+    client = OpenAI(api_key=api_key)
+else:
+    raise ValueError("Missing OPENAI_API_KEY. Ensure it's set in .env or environment variables.")
+
 def get_embedding(text):
 
     try:
@@ -35,9 +40,13 @@ def store_embedding(article_id, text):
     emb_np = np.array(emb, dtype=np.float32).tolist()  # Convert NumPy array to list
 
     session.execute(
-        tx("INSERT INTO article_embeddings (id, embedding) VALUES (:id, :embedding) "
+        tx("INSERT INTO article_embeddings (id, embedding, summary) VALUES (:id, :embedding, :summary) "
             "ON CONFLICT (id) DO UPDATE SET embedding = :embedding"),
-        {"id": article_id, "embedding": emb_np}
+        {
+            "id": article_id, 
+            "embedding": emb_np,
+            "summary": text
+        }
     )
 
     session.commit()

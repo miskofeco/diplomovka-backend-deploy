@@ -25,6 +25,7 @@ class Article(Base):
 class ArticleEmbedding(Base):
     __tablename__ = "article_embeddings"
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    summary = Column(Text)
     # embedding as a vector, array, or JSON—whatever suits your setup
     embedding = Column(ARRAY(REAL))
     

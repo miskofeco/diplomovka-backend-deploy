@@ -31,8 +31,15 @@ def process_new_articles():
             result = session.execute(
                 text("""
                 INSERT INTO articles (id, url, title, intro, summary, category, tags, top_image)
-                VALUES (gen_random_uuid(), :url, :title, :intro, :summary, :category, :tags, :top_image)
-                ON CONFLICT (url) DO NOTHING
+                VALUES (gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, :category, ARRAY[:tags], :top_image)
+                ON CONFLICT (id) DO UPDATE
+                SET url = array_append(articles.url, EXCLUDED.url::TEXT),
+                    tags = array_cat(articles.tags, EXCLUDED.tags::TEXT[]),
+                    title = EXCLUDED.title,
+                    intro = EXCLUDED.intro,
+                    summary = EXCLUDED.summary,
+                    category = EXCLUDED.category,
+                    top_image = EXCLUDED.top_image
                 RETURNING id
                 """),
                 {
@@ -41,8 +48,7 @@ def process_new_articles():
                     "intro": llm_data.get("intro", ""),
                     "summary": llm_data.get("summary", ""),
                     "category": llm_data.get("category", ""),
-                    # Convert tags to JSON string (assuming the column is text or json)
-                    "tags": json.dumps(llm_data.get("tags", [])),
+                    "tags": llm_data.get("tags", []),
                     "top_image": article.get("top_image", ""),
                 },
             )

@@ -7,16 +7,20 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 from newspaper import Article
+from sqlalchemy import text
+
+from data.db import SessionLocal
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # ------------------------ CONFIG ------------------------ #
 # Hospodarske noviny, hlavnespravy.sk, trend.sk, noviny.sk, topky.sk, novycas.sk
 LANDING_PAGES = [
-    #{
-    #    "url": "https://pravda.sk/",
-    #    "patterns": ["/clanok/"]
-    #},
+    {
+        "url": "https://pravda.sk/",
+        "patterns": ["/clanok/"]
+    },
     {
         "url": "https://www.aktuality.sk",
         "patterns": ["/clanok/"]
@@ -26,32 +30,14 @@ LANDING_PAGES = [
     #    "patterns": ["/c/"]
     #}
 ]
-PROCESSED_URLS_FILE = "./data/urls.json"    # File to keep track of processed article URLs
-# -------------------------------------------------------- #
 
-def load_processed_urls():
-    """
-    Loads processed article URLs from JSON file into a Python set. 
-    Returns an empty set if the file doesn't exist or is invalid.
-    """
-    if not os.path.exists(PROCESSED_URLS_FILE):
-        return set()
-    try:
-        with open(PROCESSED_URLS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            # Convert list to set for faster membership checks
-            return set(data)
-    except Exception as e:
-        logging.error(f"Failed to load {PROCESSED_URLS_FILE}: {e}")
-        return set()
+def get_processed_urls_db(session):
+    result = session.execute(text("SELECT url FROM processed_urls"))
+    return {row[0] for row in result.fetchall()}
 
-def save_processed_urls(processed_urls):
-
-    try:
-        with open(PROCESSED_URLS_FILE, "w", encoding="utf-8") as f:
-            json.dump(list(processed_urls), f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        logging.error(f"Failed to save to {PROCESSED_URLS_FILE}: {e}")
+def mark_url_processed(session, url):
+    session.execute(text("INSERT INTO processed_urls (url) VALUES (:url) ON CONFLICT DO NOTHING"), {"url": url})
+    session.commit()
 
 def get_landing_page_links(url, patterns):
     """
@@ -115,7 +101,8 @@ def parse_article(url):
         return None
 
 def scrape_for_new_articles():
-    processed_urls = load_processed_urls()
+    session = SessionLocal()
+    processed_urls = get_processed_urls_db(session)
     new_articles = [] 
     articles_count = 0  # Counter for the number of successfully scraped articles
 
@@ -129,21 +116,17 @@ def scrape_for_new_articles():
         logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
 
         for link in new_links:
-
             article_data = parse_article(link)
-            # Retrieve and clean the article text
             text_content = article_data.get("text", "").strip() if article_data else ""
-            # Check if article_data exists, text is non-empty, and not equal to the default "No Content"
             if article_data and text_content and text_content.lower() != "no content":
                 new_articles.append(article_data)
                 logging.info(f"New article scraped: {article_data['title'][:50]}...")
                 articles_count += 1
             else:
                 logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
-            # Mark the URL as processed regardless of whether valid article data was retrieved
-            processed_urls.add(link)
+            
+            # Mark the URL as processed in the database
+            mark_url_processed(session, link)
             time.sleep(1)  # Delay to respect site's resources
 
-
-    save_processed_urls(processed_urls)
     return new_articles

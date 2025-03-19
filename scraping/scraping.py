@@ -77,11 +77,7 @@ def get_landing_page_links(url, patterns):
         # Check if this link matches our patterns
         if any(pattern in href for pattern in patterns):
             # Convert to absolute if needed
-            if href.startswith("/"):
-                full_url = scheme_and_domain + href
-            else:
-                full_url = href
-            
+            full_url = scheme_and_domain + href if href.startswith("/") else href
             if full_url not in all_links:
                 all_links.append(full_url)
 
@@ -97,23 +93,23 @@ def parse_article(url):
         article.download()
         article.parse()
 
-        top_image = article.top_image if article.top_image else ""
+        top_image = article.top_image or ""
         # Extract video URLs if any
-        videos = article.movies if article.movies else []
+        videos = article.movies or []
 
-        data = {
+        return {
             "url": url,
             "title": article.title or "No Title",
-            "publish_date": (article.publish_date.strftime("%Y-%m-%d %H:%M:%S") 
-                            if article.publish_date else "Unknown Date"),
+            "publish_date": (
+                article.publish_date.strftime("%Y-%m-%d %H:%M:%S")
+                if article.publish_date
+                else "Unknown Date"
+            ),
             "text": article.text or "No Content",
             "top_image": top_image,
             "videos": videos,  # Added video links
-            "scraped_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "scraped_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
-
-        return data
-
     except Exception as e:
         logging.error(f"Failed to parse article at {url}: {e}")
         return None

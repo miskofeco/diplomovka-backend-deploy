@@ -4,53 +4,51 @@ import os
 import uuid
 from datetime import datetime
 
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from data.db import SessionLocal
+
 from scraping.scraping import scrape_for_new_articles
 from processing.summary import process_article
-from processing.vectorstore import update_faiss_index
+from processing.vectorstore import store_embedding
 
 def process_new_articles():
-    # Scrape new articles (assumes scrape_for_new_articles returns a list of articles)
-    articles = scrape_for_new_articles()  
-    processed_articles = []
+    """Scrapes, processes, and stores articles & embeddings in PostgreSQL."""
+    articles = scrape_for_new_articles()
 
-    for article in articles:
-        text = article.get("text", "").strip()
-        if not text:
-            logging.info("Article text is empty; skipping.")
-            continue
+    # Use a context manager so the session is properly closed.
+    with SessionLocal() as session:
+        for article in articles:
+            article_text = article.get("text", "").strip()
+            if not article_text:
+                logging.info("Skipping empty article.")
+                continue
 
-        try:
-            # Process article text via the LLM (should return a dict with keys like title, intro, summary, category, tags, etc.)
-            llm_data = process_article(text)
-        except Exception as e:
-            logging.error(f"LLM processing error for article {article.get('url')}: {e}")
-            continue
+            # Process article with LLM
+            llm_data = process_article(article_text)
 
-        # Merge scraped article info with LLM output and add a timestamp
-        processed_article = {
-            "id": str(uuid.uuid4()),
-            "url": article.get("url", ""),
-            "top_image": article.get("top_image", ""),
-            **llm_data,
-            "last_modified": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        processed_articles.append(processed_article)
+            # Insert article into PostgreSQL and retrieve the article ID
+            result = session.execute(
+                text("""
+                INSERT INTO articles (id, url, title, intro, summary, category, tags, top_image)
+                VALUES (gen_random_uuid(), :url, :title, :intro, :summary, :category, :tags, :top_image)
+                ON CONFLICT (url) DO NOTHING
+                RETURNING id
+                """),
+                {
+                    "url": article.get("url", ""),
+                    "title": llm_data.get("title", ""),
+                    "intro": llm_data.get("intro", ""),
+                    "summary": llm_data.get("summary", ""),
+                    "category": llm_data.get("category", ""),
+                    # Convert tags to JSON string (assuming the column is text or json)
+                    "tags": json.dumps(llm_data.get("tags", [])),
+                    "top_image": article.get("top_image", ""),
+                },
+            )
+            if article_id := result.scalar():
+                store_embedding(article_id, llm_data.get("summary", ""))
 
-        # Update vector store with the article's summary embedding (if available)
-        summary_text = llm_data.get("summary", "").strip()
-        if summary_text:
-            update_faiss_index(summary_text, processed_article["id"])
-        else:
-            logging.info(f"Article {article['id']} has no summary for embedding.")
+        session.commit()
 
-    # Append new processed articles to processed.json
-    processed_file = "./data/processed.json"
-    if os.path.exists(processed_file):
-        with open(processed_file, "r", encoding="utf-8") as f:
-            existing = json.load(f)
-    else:
-        existing = []
-    existing.extend(processed_articles)
-    with open(processed_file, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=4)
-    logging.info(f"Processed {len(processed_articles)} new articles.")
+    logging.info(f"Processed {len(articles)} new articles.")

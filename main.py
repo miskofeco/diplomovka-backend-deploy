@@ -1,5 +1,5 @@
 import logging
-from pipeline import process_new_articles
+from scraping.scraping import scrape_for_new_articles
 from data.db import engine
 from sqlalchemy import text
 
@@ -36,7 +36,7 @@ class ProcessedURL(Base):
 
 def main():
     Base.metadata.create_all(engine)
-    process_new_articles()
+    scrape_for_new_articles()
 
 if __name__ == "__main__":
     main()

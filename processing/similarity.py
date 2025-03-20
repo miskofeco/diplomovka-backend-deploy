@@ -4,7 +4,7 @@ from sqlalchemy import text
 from data.db import SessionLocal
 from processing.vectorstore import get_embedding 
 
-def find_similar_article(article_text, threshold=0.85):
+def find_similar_article(article_text, threshold=0.9):
     """
     Finds the most similar saved article based on embedding similarity.
     

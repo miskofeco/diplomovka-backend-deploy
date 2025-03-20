@@ -8,6 +8,16 @@ import requests
 from bs4 import BeautifulSoup
 from newspaper import Article
 from sqlalchemy import text
+from processing.vectorstore import store_embedding
+
+import logging
+from datetime import datetime
+import os
+
+from sqlalchemy import text
+from data.db import SessionLocal
+from processing.similarity import find_similar_article
+from processing.summary import process_article, update_article_summary
 
 from data.db import SessionLocal
 
@@ -100,11 +110,59 @@ def parse_article(url):
         logging.error(f"Failed to parse article at {url}: {e}")
         return None
 
+session = SessionLocal()
+def process_new_article(article):
+            article_text = article.get("text", "").strip()
+            if not article_text:
+                logging.info("Skipping empty article.")
+                return
+
+            if similar_article := find_similar_article(article_text):
+                logging.info(f"Updating existing article ID: {similar_article['id']}")
+                updated_data = update_article_summary(similar_article["summary"], article_text)
+                session.execute(
+                    text("""
+                    UPDATE articles
+                    SET summary = :summary,
+                        intro = :intro,
+                        url = array_append(articles.url, :url)
+                    WHERE id = :article_id
+                    """),
+                    {
+                        "summary": updated_data["summary"],
+                        "intro": updated_data["intro"],
+                        "url": article.get("url", ""),
+                        "article_id": similar_article["id"],
+                    }
+                )
+            else:
+                # Process article with LLM
+                llm_data = process_article(article_text)
+
+                result = session.execute(
+                    text("""
+                    INSERT INTO articles (id, url, title, intro, summary, category, tags, top_image)
+                    VALUES (gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, :category, ARRAY[:tags], :top_image)
+                    RETURNING id
+                    """),
+                    {
+                        "url": article.get("url", ""),
+                        "title": llm_data.get("title", ""),
+                        "intro": llm_data.get("intro", ""),
+                        "summary": llm_data.get("summary", ""),
+                        "category": llm_data.get("category", ""),
+                        "tags": llm_data.get("tags", []),
+                        "top_image": article.get("top_image", ""),
+                    },
+                )
+                if article_id := result.scalar():
+                    store_embedding(article_id, llm_data.get("summary", ""))
+
+            session.commit()
+
 def scrape_for_new_articles():
     session = SessionLocal()
     processed_urls = get_processed_urls_db(session)
-    new_articles = [] 
-    articles_count = 0  # Counter for the number of successfully scraped articles
 
     for page in LANDING_PAGES:
         landing_url = page["url"]
@@ -119,14 +177,11 @@ def scrape_for_new_articles():
             article_data = parse_article(link)
             text_content = article_data.get("text", "").strip() if article_data else ""
             if article_data and text_content and text_content.lower() != "no content":
-                new_articles.append(article_data)
+                process_new_article(article_data)
                 logging.info(f"New article scraped: {article_data['title'][:50]}...")
-                articles_count += 1
             else:
                 logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
             
             # Mark the URL as processed in the database
             mark_url_processed(session, link)
             time.sleep(1)  # Delay to respect site's resources
-
-    return new_articles

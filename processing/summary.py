@@ -95,7 +95,7 @@ def update_article_summary(existing_summary: str, new_article_text: str) -> dict
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message}
         ],
-        temperature=0.7,
+        temperature=0.85,
         max_tokens=3000,
         response_format=UpdatedArticle
     )

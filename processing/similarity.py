@@ -5,16 +5,6 @@ from data.db import SessionLocal
 from processing.vectorstore import get_embedding 
 
 def find_similar_article(article_text, threshold=0.9):
-    """
-    Finds the most similar saved article based on embedding similarity.
-    
-    Parameters:
-        article_text (str): The text of the new article.
-        threshold (float): The similarity threshold to consider an article as a match.
-        
-    Returns:
-        dict or None: The most similar article (id, summary) if found, otherwise None.
-    """
     # Generate the embedding for the new article
     new_embedding = get_embedding(article_text)
     if new_embedding is None:

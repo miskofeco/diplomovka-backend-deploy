@@ -125,13 +125,15 @@ def process_new_article(article):
                     UPDATE articles
                     SET summary = :summary,
                         intro = :intro,
-                        url = array_append(articles.url, :url)
+                        url = array_append(articles.url, :url),
+                        scraped_at = :scraped_at
                     WHERE id = :article_id
                     """),
                     {
                         "summary": updated_data["summary"],
                         "intro": updated_data["intro"],
                         "url": article.get("url", ""),
+                        "scraped_at": article.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
                         "article_id": similar_article["id"],
                     }
                 )
@@ -141,8 +143,8 @@ def process_new_article(article):
 
                 result = session.execute(
                     text("""
-                    INSERT INTO articles (id, url, title, intro, summary, category, tags, top_image)
-                    VALUES (gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, :category, ARRAY[:tags], :top_image)
+                    INSERT INTO articles (id, url, title, intro, summary, category, tags, top_image, scraped_at)
+                    VALUES (gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, :category, ARRAY[:tags], :top_image, :scraped_at)
                     RETURNING id
                     """),
                     {
@@ -153,6 +155,7 @@ def process_new_article(article):
                         "category": llm_data.get("category", ""),
                         "tags": llm_data.get("tags", []),
                         "top_image": article.get("top_image", ""),
+                        "scraped_at": article.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
                     },
                 )
                 if article_id := result.scalar():
@@ -172,6 +175,7 @@ def scrape_for_new_articles():
         current_links = get_landing_page_links(landing_url, patterns)
         new_links = [link for link in current_links if link not in processed_urls]
         logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
+        count = 0
 
         for link in new_links:
             article_data = parse_article(link)
@@ -179,9 +183,12 @@ def scrape_for_new_articles():
             if article_data and text_content and text_content.lower() != "no content":
                 process_new_article(article_data)
                 logging.info(f"New article scraped: {article_data['title'][:50]}...")
+                count += 1
             else:
                 logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
             
             # Mark the URL as processed in the database
             mark_url_processed(session, link)
             time.sleep(1)  # Delay to respect site's resources
+            if count >= 3:
+                break

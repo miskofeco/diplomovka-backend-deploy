@@ -21,6 +21,7 @@ class Article(Base):
     category = Column(String)
     tags = Column(ARRAY(String), nullable=True)
     top_image = Column(String)
+    scraped_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
     
 class ArticleEmbedding(Base):
     __tablename__ = "article_embeddings"

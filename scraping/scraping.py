@@ -190,5 +190,5 @@ def scrape_for_new_articles():
             # Mark the URL as processed in the database
             mark_url_processed(session, link)
             time.sleep(1)  # Delay to respect site's resources
-            if count >= 3:
+            if count >= 1:
                 break

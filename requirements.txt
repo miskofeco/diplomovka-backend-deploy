@@ -1,0 +1,28 @@
+# --- Core Web Framework & Server ---
+Flask>=3.0.0         # Hlavný web framework
+gunicorn>=21.0.0       # Produkčný WSGI server (Nutné pre Render!)
+Flask-Cors>=4.0.0      # Pre povolenie komunikácie s Vercel frontendom
+
+# --- Databáza (PostgreSQL + pgvector) ---
+SQLAlchemy>=2.0.0      # ORM pre prácu s databázou (alebo len psycopg2 ak nepoužívate ORM)
+psycopg2-binary>=2.9.0 # Driver pre PostgreSQL
+pgvector>=0.2.0        # Klient pre prácu s pgvector rozšírením
+
+# --- OpenAI API ---
+openai>=1.0.0          # Oficiálny klient pre OpenAI API
+tiktoken>=0.7.0        # (Voliteľné, ale často užitočné) Pre počítanie tokenov pre OpenAI modely
+
+# --- HTTP Požiadavky & Utility ---
+requests>=2.30.0       # Pre posielanie HTTP požiadaviek (ak voláte iné API)
+python-dotenv>=1.0.0   # Pre načítanie .env súborov (hlavne pre lokálny vývoj)
+PyYAML>=6.0            # (Voliteľné) Ak používate YAML pre konfiguráciu
+
+# --- Data Handling (Ak naozaj potrebujete) ---
+numpy>=1.26.0          # (Voliteľné) Základ pre numerické operácie, často závislosť pre ML/data knižnice
+pandas>=2.2.0          # (Voliteľné) Ak spracúvate dáta v tabuľkovej forme
+
+
+beautifulsoup4>=4.12.0
+newspaper3k>=0.2.8
+lxml>=5.0.0
+lxml_html_clean>=0.1.0

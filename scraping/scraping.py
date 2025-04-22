@@ -17,7 +17,7 @@ import os
 from sqlalchemy import text
 from data.db import SessionLocal
 from processing.similarity import find_similar_article
-from processing.summary import process_article, update_article_summary
+from processing.summary import process_article, update_article_summary, process_article_data
 
 from data.db import SessionLocal
 
@@ -163,89 +163,114 @@ def parse_article(url):
         return None
 
 def process_new_article(article_data: dict):
-    article_text = article_data.get("text", "").strip()
-    if not article_text:
-        logging.warning("Empty article text, skipping processing")
-        return
+    try:
+        article_text = article_data.get("text", "").strip()
+        if not article_text:
+            logging.warning("Empty article text, skipping processing")
+            return
 
-    with SessionLocal() as session:
-        try:
-            if similar_article := find_similar_article(article_text):
-                logging.info(f"Updating existing article ID: {similar_article['id']}")
-                # Update existing article
-                updated_data = update_article_summary(similar_article["summary"], article_text)
-                
-                # Calculate new source orientation including the new URL
-                current_urls = session.execute(
-                    text("SELECT url FROM articles WHERE id = :id"),
-                    {"id": similar_article["id"]}
-                ).scalar()
-                all_urls = current_urls + [article_data.get("url", "")]
-                source_orientation = calculate_source_orientation(all_urls)
-                
-                session.execute(
-                    text("""
-                    UPDATE articles
-                    SET summary = :summary,
-                        intro = :intro,
-                        url = array_append(articles.url, :url),
-                        scraped_at = :scraped_at,
-                        source_orientation = :source_orientation
-                    WHERE id = :article_id
-                    """),
-                    {
-                        "summary": updated_data["summary"],
-                        "intro": updated_data["intro"],
-                        "url": article_data.get("url", ""),
-                        "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                        "article_id": similar_article["id"],
-                        "source_orientation": json.dumps(source_orientation)
-                    }
-                )
-            else:
-                # Process new article
-                llm_data = process_article(article_text)
-                source_orientation = calculate_source_orientation([article_data.get("url", "")])
-
-                result = session.execute(
-                    text("""
-                    INSERT INTO articles (
-                        id, url, title, intro, summary, category, tags, top_image, 
-                        scraped_at, political_orientation, political_confidence, 
-                        political_reasoning, source_orientation
+        with SessionLocal() as session:
+            try:
+                if similar_article := find_similar_article(article_text):
+                    logging.info(f"Updating existing article ID: {similar_article['id']}")
+                    # Update existing article
+                    updated_data = update_article_summary(similar_article["summary"], article_text)
+                    logging.debug(f"Updated data: {updated_data}")
+                    
+                    # Calculate new source orientation including the new URL
+                    current_urls = session.execute(
+                        text("SELECT url FROM articles WHERE id = :id"),
+                        {"id": similar_article["id"]}
+                    ).scalar()
+                    all_urls = current_urls + [article_data.get("url", "")]
+                    source_orientation = calculate_source_orientation(all_urls)
+                    
+                    session.execute(
+                        text("""
+                        UPDATE articles
+                        SET summary = :summary,
+                            intro = :intro,
+                            url = array_append(articles.url, :url),
+                            scraped_at = :scraped_at,
+                            source_orientation = :source_orientation
+                        WHERE id = :article_id
+                        """),
+                        {
+                            "summary": updated_data["summary"],
+                            "intro": updated_data["intro"],
+                            "url": article_data.get("url", ""),
+                            "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+                            "article_id": similar_article["id"],
+                            "source_orientation": json.dumps(source_orientation)
+                        }
                     )
-                    VALUES (
-                        gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, 
-                        :category, :tags, :top_image, :scraped_at, :political_orientation,
-                        :political_confidence, :political_reasoning, :source_orientation
-                    )
-                    RETURNING id
-                    """),
-                    {
+                else:
+                    # Process new article
+                    llm_data = process_article(article_text)
+                    logging.debug(f"LLM response data type: {type(llm_data)}")
+                    logging.debug(f"LLM response content: {llm_data}")
+                    
+                    if not isinstance(llm_data, dict):
+                        try:
+                            llm_data = json.loads(llm_data) if isinstance(llm_data, str) else dict(llm_data)
+                        except Exception as e:
+                            logging.error(f"Failed to convert LLM response to dict: {e}")
+                            logging.error(f"Raw LLM response: {llm_data}")
+                            raise ValueError(f"Invalid LLM response format: {llm_data}")
+                        
+                    source_orientation = calculate_source_orientation([article_data.get("url", "")])
+                    
+                    # Prepare data for insertion
+                    insert_data = {
                         "url": article_data.get("url", ""),
-                        "title": llm_data["title"],
-                        "intro": llm_data["intro"],
-                        "summary": llm_data["summary"],
-                        "category": llm_data["category"],
-                        "tags": llm_data["tags"],
+                        "title": llm_data.get("title", ""),
+                        "intro": llm_data.get("intro", ""),
+                        "summary": llm_data.get("summary", ""),
+                        "category": llm_data.get("category", ""),
+                        "tags": llm_data.get("tags", []),
                         "top_image": article_data.get("top_image", ""),
                         "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                        "political_orientation": llm_data["political_orientation"],
-                        "political_confidence": llm_data["political_confidence"],
-                        "political_reasoning": llm_data["political_reasoning"],
-                        "source_orientation": json.dumps(source_orientation)
+                        "political_orientation": llm_data.get("political_orientation", {}),
+                        "political_confidence": llm_data.get("political_confidence", 0),
+                        "political_reasoning": llm_data.get("political_reasoning", ""),
+                        "source_orientation": source_orientation
                     }
-                )
-                if article_id := result.scalar():
-                    store_embedding(article_id, llm_data["summary"])
+                    
+                    # Process data to ensure dictionaries are converted to JSON strings
+                    processed_data = process_article_data(insert_data)
+                    
+                    result = session.execute(
+                        text("""
+                        INSERT INTO articles (
+                            id, url, title, intro, summary, category, tags, top_image, 
+                            scraped_at, political_orientation, political_confidence, 
+                            political_reasoning, source_orientation
+                        )
+                        VALUES (
+                            gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, 
+                            :category, :tags, :top_image, :scraped_at, :political_orientation,
+                            :political_confidence, :political_reasoning, :source_orientation
+                        )
+                        RETURNING id
+                        """),
+                        processed_data
+                    )
+                    if article_id := result.scalar():
+                        store_embedding(article_id, llm_data.get("summary", ""))
 
-            session.commit()
-            logging.info("Article processed and saved successfully")
-            
-        except Exception as e:
-            session.rollback()
-            logging.error(f"Error processing article: {str(e)}")
-            raise
+                session.commit()
+                logging.info("Article processed and saved successfully")
+                
+            except Exception as e:
+                session.rollback()
+                logging.error(f"Error processing article: {str(e)}")
+                logging.error(f"Article data: {article_data}")
+                raise
+
+    except Exception as e:
+        logging.error(f"Error processing article: {str(e)}")
+        logging.error(f"Stack trace:", exc_info=True)
+        raise
 
 def scrape_for_new_articles():
     session = SessionLocal()

@@ -1,13 +1,10 @@
 import logging
 from scraping.scraping import scrape_for_new_articles
 from data.db import engine
-from sqlalchemy import text
-
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from sqlalchemy import text, Column, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Text, DateTime
-from sqlalchemy.dialects.postgresql import UUID, ARRAY, REAL
+from sqlalchemy.dialects.postgresql import UUID, ARRAY, REAL, JSON
 
 Base = declarative_base()
 
@@ -22,6 +19,8 @@ class Article(Base):
     tags = Column(ARRAY(String), nullable=True)
     top_image = Column(String)
     scraped_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+    fact_check_results = Column(JSON)  # Store fact checking results
+    summary_annotations = Column(JSON)  # Store summary annotations with sources
     
 class ArticleEmbedding(Base):
     __tablename__ = "article_embeddings"

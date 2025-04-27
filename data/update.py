@@ -24,8 +24,19 @@ def add_scraped_at_column(engine):
         """), {"now": datetime.now()})
         print("Rows updated.")
 
+def add_political_orientation(engine):
+    with engine.connect() as connection:
+        print("Adding political orientation columns...")
+        with open('backend/data/migrations/add_political_orientation.sql', 'r') as f:
+            sql = f.read()
+            connection.execute(text(sql))
+            connection.commit()
+        print("Political orientation columns added.")
+
 # Example of initializing the engine
 engine = create_engine(DB_URL)
 
 # Call the function after initializing the engine
-add_scraped_at_column(engine)
+if __name__ == "__main__":
+    add_scraped_at_column(engine)
+    add_political_orientation(engine)

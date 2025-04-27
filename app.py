@@ -58,30 +58,29 @@ except Exception as e:
 def get_articles():
     session = SessionLocal()
     try:
-        # Použi ORM namiesto priameho SQL pre lepšiu prácu s modelmi
-        # articles_data = session.query(Article).order_by(Article.scraped_at.desc()).all()
-        # articles = [ # Konvertuj na slovníky, ak je to potrebné pre frontend
-        #     {
-        #         "title": a.title, "intro": a.intro, "summary": a.summary,
-        #         "url": a.url, "category": a.category, "tags": a.tags,
-        #         "top_image": a.top_image, "scraped_at": a.scraped_at.isoformat() # Formátuj dátum
-        #     } for a in articles_data
-        # ]
-
-        # Alebo ak chceš ostať pri texte (menej odporúčané s ORM)
         result = session.execute(
-             text("SELECT title, intro, summary, url, category, tags, top_image, scraped_at FROM articles ORDER BY scraped_at DESC") # Možno radšej podľa scraped_at?
+            text("""
+                SELECT 
+                    title, intro, summary, url, category, tags, top_image, scraped_at
+                FROM articles 
+                ORDER BY scraped_at DESC
+            """)
         )
         articles = [{
-            "title": r[0], "intro": r[1], "summary": r[2], "url": r[3],
-            "category": r[4], "tags": r[5], "top_image": r[6],
-            "scraped_at": r[7].isoformat() if r[7] else None, # Bezpečná konverzia dátumu
+            "title": r[0],
+            "intro": r[1],
+            "summary": r[2],
+            "url": r[3],
+            "category": r[4],
+            "tags": r[5],
+            "top_image": r[6],
+            "scraped_at": r[7].isoformat() if r[7] else None
         } for r in result.fetchall()]
 
         return jsonify(articles)
     except Exception as e:
-        session.rollback() # Vráť zmeny pri chybe
-        print(f"Error fetching articles: {e}") # Logovanie chyby
+        session.rollback()
+        print(f"Error fetching articles: {e}")
         return jsonify({"error": "Could not fetch articles", "details": str(e)}), 500
     finally:
         session.close() # Vždy zatvor session

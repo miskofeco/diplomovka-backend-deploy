@@ -17,7 +17,7 @@ import os
 from sqlalchemy import text
 from data.db import SessionLocal
 from processing.similarity import find_similar_article
-from processing.summary import process_article, update_article_summary, process_article_data
+from processing.summary import process_article, update_article_summary
 
 from data.db import SessionLocal
 
@@ -93,7 +93,8 @@ def get_source_info(url: str) -> dict:
     except Exception:
         return None
 
-def get_processed_urls_db(session):
+def get_processed_urls(session):
+    """Get set of all processed URLs from database"""
     result = session.execute(text("SELECT url FROM processed_urls"))
     return {row[0] for row in result.fetchall()}
 
@@ -171,92 +172,75 @@ def process_new_article(article_data: dict):
 
         with SessionLocal() as session:
             try:
-                if similar_article := find_similar_article(article_text):
-                    logging.info(f"Updating existing article ID: {similar_article['id']}")
-                    # Update existing article
-                    updated_data = update_article_summary(similar_article["summary"], article_text)
-                    logging.debug(f"Updated data: {updated_data}")
+                # Skontrolujeme či existuje podobný článok
+                similar_article = find_similar_article(article_text)
+                
+                if similar_article:
+                    logging.info(f"Found similar article ID: {similar_article['id']}")
+                    # Aktualizujeme existujúci článok
+                    updated_data = update_article_summary(
+                        existing_summary=similar_article['summary'],
+                        new_article_text=article_text
+                    )
                     
-                    # Calculate new source orientation including the new URL
-                    current_urls = session.execute(
-                        text("SELECT url FROM articles WHERE id = :id"),
-                        {"id": similar_article["id"]}
-                    ).scalar()
-                    all_urls = current_urls + [article_data.get("url", "")]
-                    source_orientation = calculate_source_orientation(all_urls)
-                    
+                    # Aktualizujeme článok v databáze
                     session.execute(
                         text("""
-                        UPDATE articles
-                        SET summary = :summary,
+                        UPDATE articles 
+                        SET 
                             intro = :intro,
-                            url = array_append(articles.url, :url),
-                            scraped_at = :scraped_at,
-                            source_orientation = :source_orientation
+                            summary = :summary,
+                            url = array_append(url, :new_url),
                         WHERE id = :article_id
                         """),
                         {
-                            "summary": updated_data["summary"],
                             "intro": updated_data["intro"],
-                            "url": article_data.get("url", ""),
-                            "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                            "article_id": similar_article["id"],
-                            "source_orientation": json.dumps(source_orientation)
+                            "summary": updated_data["summary"],
+                            "new_url": article_data.get("url"),
+                            "article_id": similar_article["id"]
                         }
                     )
-                else:
-                    # Process new article
-                    llm_data = process_article(article_text)
-                    logging.debug(f"LLM response data type: {type(llm_data)}")
-                    logging.debug(f"LLM response content: {llm_data}")
                     
-                    if not isinstance(llm_data, dict):
-                        try:
-                            llm_data = json.loads(llm_data) if isinstance(llm_data, str) else dict(llm_data)
-                        except Exception as e:
-                            logging.error(f"Failed to convert LLM response to dict: {e}")
-                            logging.error(f"Raw LLM response: {llm_data}")
-                            raise ValueError(f"Invalid LLM response format: {llm_data}")
-                        
-                    source_orientation = calculate_source_orientation([article_data.get("url", "")])
+                    # Aktualizujeme embedding pre nový súhrn
+                    store_embedding(similar_article["id"], updated_data["summary"])
                     
-                    # Prepare data for insertion
-                    insert_data = {
-                        "url": article_data.get("url", ""),
-                        "title": llm_data.get("title", ""),
-                        "intro": llm_data.get("intro", ""),
-                        "summary": llm_data.get("summary", ""),
-                        "category": llm_data.get("category", ""),
-                        "tags": llm_data.get("tags", []),
-                        "top_image": article_data.get("top_image", ""),
-                        "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-                        "political_orientation": llm_data.get("political_orientation", {}),
-                        "political_confidence": llm_data.get("political_confidence", 0),
-                        "political_reasoning": llm_data.get("political_reasoning", ""),
-                        "source_orientation": source_orientation
-                    }
-                    
-                    # Process data to ensure dictionaries are converted to JSON strings
-                    processed_data = process_article_data(insert_data)
-                    
-                    result = session.execute(
-                        text("""
-                        INSERT INTO articles (
-                            id, url, title, intro, summary, category, tags, top_image, 
-                            scraped_at, political_orientation, political_confidence, 
-                            political_reasoning, source_orientation
-                        )
-                        VALUES (
-                            gen_random_uuid(), ARRAY[:url], :title, :intro, :summary, 
-                            :category, :tags, :top_image, :scraped_at, :political_orientation,
-                            :political_confidence, :political_reasoning, :source_orientation
-                        )
-                        RETURNING id
-                        """),
-                        processed_data
+                    session.commit()
+                    logging.info(f"Updated existing article {similar_article['id']}")
+                    return
+
+                # Spracovanie nového článku
+                llm_data = process_article(article_text)
+                
+                # Basic insert data without additional processing
+                insert_data = {
+                    "url": [article_data.get("url", "")],  # Wrap in list for ARRAY type
+                    "title": llm_data.get("title", ""),
+                    "intro": llm_data.get("intro", ""),
+                    "summary": llm_data.get("summary", ""),
+                    "category": llm_data.get("category", ""),
+                    "tags": llm_data.get("tags", []),
+                    "top_image": article_data.get("top_image", ""),
+                    "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                }
+                
+                result = session.execute(
+                    text("""
+                    INSERT INTO articles (
+                        id, url, title, intro, summary, category, tags, 
+                        top_image, scraped_at
                     )
-                    if article_id := result.scalar():
-                        store_embedding(article_id, llm_data.get("summary", ""))
+                    VALUES (
+                        gen_random_uuid(), :url, :title, :intro, :summary, 
+                        :category, :tags, :top_image, :scraped_at
+                    )
+                    RETURNING id
+                    """),
+                    insert_data
+                )
+                
+                article_id = result.scalar()
+                if article_id:
+                    store_embedding(article_id, llm_data.get("summary", ""))
 
                 session.commit()
                 logging.info("Article processed and saved successfully")
@@ -272,35 +256,50 @@ def process_new_article(article_data: dict):
         logging.error(f"Stack trace:", exc_info=True)
         raise
 
-def scrape_for_new_articles():
+def scrape_for_new_articles(max_articles: int = 5):
     session = SessionLocal()
-    processed_urls = get_processed_urls_db(session)
-
-    for page in LANDING_PAGES:
-        landing_url = page["url"]
-        patterns = page["patterns"]
-        logging.info(f"Processing landing page: {landing_url} with patterns {patterns}")
-
-        current_links = get_landing_page_links(landing_url, patterns)
-        new_links = [link for link in current_links if link not in processed_urls]
-        logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
-        count = 0
-
-        for link in new_links:
-            article_data = parse_article(link)
-            text_content = article_data.get("text", "").strip() if article_data else ""
-            if article_data and text_content and text_content.lower() != "no content":
-                process_new_article(article_data)
-                logging.info(f"New article scraped: {article_data['title'][:50]}...")
-                count += 1
-            else:
-                logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
-            
-            # Mark the URL as processed in the database
-            mark_url_processed(session, link)
-            time.sleep(1)  # Delay to respect site's resources
-            if count >= 1:
+    processed_urls = get_processed_urls(session)
+    
+    total_count = 0
+    
+    try:
+        for page in LANDING_PAGES:
+            if total_count >= max_articles:
                 break
+                
+            landing_url = page["url"]
+            patterns = page["patterns"]
+            logging.info(f"Processing landing page: {landing_url} with patterns {patterns}")
+
+            current_links = get_landing_page_links(landing_url, patterns)
+            new_links = [link for link in current_links if link not in processed_urls]
+            logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
+            
+            for link in new_links:
+                if total_count >= max_articles:
+                    break
+                    
+                article_data = parse_article(link)
+                if not article_data:
+                    logging.warning(f"Failed to parse article at {link}")
+                    mark_url_processed(session, link)
+                    continue
+
+                text_content = article_data.get("text", "").strip()
+                if text_content and text_content.lower() != "no content":
+                    process_new_article(article_data)
+                    logging.info(f"New article scraped: {article_data['title'][:50]}...")
+                    total_count += 1
+                else:
+                    logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
+                
+                mark_url_processed(session, link)
+                time.sleep(1)  # Delay to respect site's resources
+    except Exception as e:
+        logging.error(f"Error during scraping: {str(e)}")
+        raise
+    finally:
+        session.close()
 
 def calculate_source_orientation(urls: list) -> dict:
     """

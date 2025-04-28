@@ -88,11 +88,14 @@ def get_articles():
 @app.route("/api/scrape", methods=["POST"])
 def scrape_articles():
     try:
-        # Spustenie scrapingu (môže trvať dlhšie, zváž beh na pozadí)
-        scrape_for_new_articles()
-        return jsonify({"message": "Scraping task started"}) # Lepšie je indikovať spustenie, nie dokončenie
+        data = request.get_json()
+        max_articles = data.get('max_articles', 5)  # Default to 5 if not specified
+        
+        # Spustenie scrapingu s limitom
+        scrape_for_new_articles(max_articles=max_articles)
+        return jsonify({"message": f"Scraping task started for {max_articles} articles"})
     except Exception as e:
-        print(f"Error during scraping: {e}") # Logovanie chyby
+        print(f"Error during scraping: {e}")  # Logovanie chyby
         return jsonify({"error": "Scraping failed", "details": str(e)}), 500
 
 # --- Tento blok sa na Render s Gunicornom nespustí ---

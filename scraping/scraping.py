@@ -190,7 +190,7 @@ def process_new_article(article_data: dict):
                         SET 
                             intro = :intro,
                             summary = :summary,
-                            url = array_append(url, :new_url),
+                            url = array_append(url, :new_url)
                         WHERE id = :article_id
                         """),
                         {

@@ -75,7 +75,7 @@ def get_category_and_tags(text: str) -> dict:
             {"role": "user", "content": user_message}
         ],
         temperature=0.3,
-        max_tokens=500,
+        max_tokens=1024,
         response_format=CategoryTags
     )
     logging.debug(f"Response content: {response.choices[0].message.content}")
@@ -101,7 +101,7 @@ def get_title_and_intro(text: str) -> dict:
             {"role": "user", "content": user_message}
         ],
         temperature=0.7,
-        max_tokens=500,
+        max_tokens=1024,
         response_format=TitleIntro
     )
     logging.debug(f"Response content: {response.choices[0].message.content}")
@@ -193,7 +193,7 @@ def get_summary(text: str) -> dict:
                 {"role": "user", "content": user_message}
             ],
             temperature=0.7,
-            max_tokens=2000,
+            max_tokens=2048,
             response_format={"type": "json_object"}
         )
 
@@ -241,7 +241,7 @@ def analyze_political_orientation(text: str) -> dict:
             {"role": "user", "content": user_message}
         ],
         temperature=0.3,
-        max_tokens=500,
+        max_tokens=2048,
         response_format={ "type": "json_object" }  # Changed from "json" to "json_object"
     )
     

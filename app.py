@@ -58,14 +58,29 @@ except Exception as e:
 def get_articles():
     session = SessionLocal()
     try:
-        result = session.execute(
-            text("""
-                SELECT 
-                    title, intro, summary, url, category, tags, top_image, scraped_at
-                FROM articles 
-                ORDER BY scraped_at DESC
-            """)
-        )
+        # Get pagination parameters
+        limit = request.args.get('limit', type=int)
+        offset = request.args.get('offset', type=int)
+        
+        # Build the SQL query with pagination
+        query = """
+            SELECT 
+                title, intro, summary, url, category, tags, top_image, scraped_at
+            FROM articles 
+            ORDER BY scraped_at DESC
+        """
+        
+        # Add LIMIT and OFFSET if provided
+        params = {}
+        if limit is not None:
+            query += " LIMIT :limit"
+            params['limit'] = limit
+        if offset is not None:
+            query += " OFFSET :offset"
+            params['offset'] = offset
+            
+        result = session.execute(text(query), params)
+        
         articles = [{
             "title": r[0],
             "intro": r[1],

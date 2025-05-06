@@ -319,11 +319,71 @@ def update_article_summary(existing_summary: str, new_article_text: str) -> dict
     if len(new_article_text) > 2000:
         new_article_text = f"{new_article_text[:2000]}..."
     
-    # Only update intro and summary for existing articles
-    title_intro = get_title_and_intro(new_article_text)
-    summary = get_summary(f"{existing_summary}\n\nNové informácie:\n{new_article_text}")
+    # Extract new information from the article
+    system_message = "Si profesionálny novinár, ktorý identifikuje nové informácie v článku."
+    user_message = f"""
+    Porovnaj existujúci súhrn s novým článkom a identifikuj iba nové, doplňujúce informácie.
+    Nevracaj celý súhrn, iba nové informácie, ktoré nie sú v existujúcom súhrne.
+    Ak nie sú žiadne nové informácie, vráť prázdny reťazec.
+
+    Existujúci súhrn:
+    {existing_summary}
+
+    Nový článok:
+    {new_article_text}
+
+    Vráť JSON s poľom 'new_information', ktoré obsahuje iba nové informácie.
+    """
     
-    return {
-        "intro": title_intro["intro"],
-        "summary": summary["summary"]
-    }
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.3,
+            max_tokens=2048,
+            response_format={"type": "json_object"}
+        )
+        
+        result = json.loads(response.choices[0].message.content)
+        new_info = result.get("new_information", "")
+        
+        # Ensure new_info is a string before calling strip()
+        if isinstance(new_info, list):
+            new_info = " ".join(new_info)
+        
+        new_info = new_info.strip()
+        
+        # If there's new information, update the summary
+        if new_info:
+            # Get title and intro for the new article
+            title_intro = get_title_and_intro(new_article_text)
+            
+            # Create updated summary by appending new information
+            updated_summary = existing_summary
+            if not updated_summary.endswith("."):
+                updated_summary += "."
+                
+            updated_summary += f" {new_info}"
+            
+            return {
+                "intro": title_intro["intro"],
+                "summary": updated_summary
+            }
+        else:
+            # No new information, keep existing summary
+            title_intro = get_title_and_intro(new_article_text)
+            return {
+                "intro": title_intro["intro"],
+                "summary": existing_summary
+            }
+    except Exception as e:
+        logging.error(f"Error updating article summary: {str(e)}")
+        # In case of error, keep the existing summary
+        title_intro = get_title_and_intro(new_article_text)
+        return {
+            "intro": title_intro["intro"],
+            "summary": existing_summary
+        }

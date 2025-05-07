@@ -18,8 +18,8 @@ model = os.getenv("OPENAI_MODEL")
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
-PREDEFINED_CATEGORIES = ["Politika", "Ekonomika", "Šport", "Kultúra", "Technológie", "Zdravie", "Veda"]
-PREDEFINED_TAGS = ["Trendy", "Aktualne", "18+", "Krimi", "Zaujimavosti", "Zivotny-styl", "Ostatne", "Zo sveta", "Domáce", "Slovensko", "Svet", "Európa", "Amerika", "Ázia", "Afrika", "Austrália", "Pre mladych", "Pre zeny","Pre studentov"]
+PREDEFINED_CATEGORIES = ["Politika", "Ekonomika", "Šport", "Kultúra", "Technológie", "Zdravie", "Veda", "Komentáre", "Cestovanie", "Blog"]
+PREDEFINED_TAGS = ["Trendy", "Aktuálne", "18+", "Krimi", "Zaujímavosti","Auto-moto", "Zivotný-štyl", "Ostatné", "Zo sveta", "Domáce", "Slovensko", "Svet", "Európa", "Amerika", "Ázia", "Afrika", "Austrália", "Pre mladých", "Pre Ženy","Pre Študentov", "Cirkev", "Umelá Inteligencia", "IT", "Podnikanie", "Umenie", "Reality-show"]
 
 # Add new constants
 POLITICAL_SOURCES = {
@@ -60,7 +60,7 @@ def get_category_and_tags(text: str) -> dict:
     user_message = f"""
     Urč kategóriu a tagy pre nasledujúci text článku. Vráť výsledok v JSON formáte:
     - "category": Vyber JEDNU kategóriu z: {PREDEFINED_CATEGORIES}
-    - "tags": Vyber 1-3 najvhodnejšie tagy z: {PREDEFINED_TAGS}
+    - "tags": Vyber 1-4 najvhodnejšie tagy z: {PREDEFINED_TAGS}
 
     Text článku:
     {text}
@@ -139,7 +139,7 @@ def extract_events(text: str) -> List[str]:
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,
-            max_tokens=1000
+            max_tokens=2048
         )
 
         # Rozdelíme odpoveď na riadky a odstránime prázdne riadky

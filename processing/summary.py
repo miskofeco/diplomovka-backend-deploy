@@ -19,7 +19,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
 PREDEFINED_CATEGORIES = ["Politika", "Ekonomika", "Šport", "Kultúra", "Technológie", "Zdravie", "Veda", "Komentáre", "Cestovanie", "Blog"]
-PREDEFINED_TAGS = ["Trendy", "Aktuálne", "18+", "Krimi", "Zaujímavosti","Auto-moto", "Zivotný-štyl", "Ostatné", "Zo sveta", "Domáce", "Slovensko", "Svet", "Európa", "Amerika", "Ázia", "Afrika", "Austrália", "Pre mladých", "Pre Ženy","Pre Študentov", "Cirkev", "Umelá Inteligencia", "IT", "Podnikanie", "Umenie", "Reality-show"]
+PREDEFINED_TAGS = ["Trendy", "Aktuálne", "18+", "Krimi", "Zaujímavosti","Auto-moto", "História", "Životný-štyl", "Ostatné", "Zo sveta", "Slovensko", "Svet", "Európa", "Amerika", "Ázia", "Afrika", "Austrália", "Pre mladých", "Pre Ženy","Pre Študentov", "Cirkev", "Umelá Inteligencia", "IT", "Podnikanie", "Umenie", "Reality-show"]
 
 # Add new constants
 POLITICAL_SOURCES = {

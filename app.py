@@ -104,11 +104,19 @@ def get_articles():
 def scrape_articles():
     try:
         data = request.get_json()
-        max_articles = data.get('max_articles', 5)  # Default to 5 if not specified
+        max_articles_per_page = data.get('max_articles_per_page', 3)  # Default to 3 per page
+        max_total_articles = data.get('max_total_articles', None)  # Optional total limit
         
         # Spustenie scrapingu s limitom
-        scrape_for_new_articles(max_articles=max_articles)
-        return jsonify({"message": f"Scraping task started for {max_articles} articles"})
+        scrape_for_new_articles(
+            max_articles_per_page=max_articles_per_page,
+            max_total_articles=max_total_articles
+        )
+        
+        return jsonify({
+            "message": f"Scraping task started for {max_articles_per_page} articles per page" + 
+                      (f" (max total: {max_total_articles})" if max_total_articles else "")
+        })
     except Exception as e:
         print(f"Error during scraping: {e}")  # Logovanie chyby
         return jsonify({"error": "Scraping failed", "details": str(e)}), 500

@@ -35,10 +35,10 @@ LANDING_PAGES = [
         "url": "https://www.aktuality.sk",
         "patterns": ["/clanok/"]
     },
-    #{
-    #    "url": "https://domov.sme.sk/",
-    #    "patterns": ["/c/"]
-    #}
+    {
+        "url": "https://domov.sme.sk/",
+        "patterns": ["/c/"]
+    }
 ]
 
 MEDIA_SOURCES = {
@@ -256,7 +256,7 @@ def process_new_article(article_data: dict):
         logging.error(f"Stack trace:", exc_info=True)
         raise
 
-def scrape_for_new_articles(max_articles: int = 5):
+def scrape_for_new_articles(max_articles_per_page: int = 3, max_total_articles: int = None):
     session = SessionLocal()
     processed_urls = get_processed_urls(session)
     
@@ -264,9 +264,6 @@ def scrape_for_new_articles(max_articles: int = 5):
     
     try:
         for page in LANDING_PAGES:
-            if total_count >= max_articles:
-                break
-                
             landing_url = page["url"]
             patterns = page["patterns"]
             logging.info(f"Processing landing page: {landing_url} with patterns {patterns}")
@@ -275,8 +272,18 @@ def scrape_for_new_articles(max_articles: int = 5):
             new_links = [link for link in current_links if link not in processed_urls]
             logging.info(f"Number of new articles found on {landing_url}: {len(new_links)}")
             
+            # Counter for articles from this page
+            page_count = 0
+            
             for link in new_links:
-                if total_count >= max_articles:
+                # Check if we've reached the max for this page
+                if page_count >= max_articles_per_page:
+                    logging.info(f"Reached maximum of {max_articles_per_page} articles for {landing_url}")
+                    break
+                
+                # Check if we've reached the total max (if specified)
+                if max_total_articles is not None and total_count >= max_total_articles:
+                    logging.info(f"Reached maximum total of {max_total_articles} articles")
                     break
                     
                 article_data = parse_article(link)
@@ -290,6 +297,7 @@ def scrape_for_new_articles(max_articles: int = 5):
                     process_new_article(article_data)
                     logging.info(f"New article scraped: {article_data['title'][:50]}...")
                     total_count += 1
+                    page_count += 1
                 else:
                     logging.info(f"Article from {link} has no valid text (found: '{text_content}'), marking as processed and skipping saving article data.")
                 

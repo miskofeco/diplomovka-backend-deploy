@@ -121,6 +121,60 @@ def scrape_articles():
         print(f"Error during scraping: {e}")  # Logovanie chyby
         return jsonify({"error": "Scraping failed", "details": str(e)}), 500
 
+# Pridajme endpoint pre vyhľadávanie článkov
+@app.route("/api/articles/search", methods=["GET"])
+def search_articles():
+    session = SessionLocal()
+    try:
+        query = request.args.get('q', '')
+        if not query or len(query) < 2:
+            return jsonify([])
+            
+        search_query = f"%{query.lower()}%"
+        
+        sql_query = """
+            SELECT DISTINCT
+                id, title, intro, summary, url, category, tags, top_image, scraped_at
+            FROM articles 
+            WHERE 
+                LOWER(title) LIKE :query OR
+                LOWER(summary) LIKE :query OR
+                LOWER(intro) LIKE :query OR
+                LOWER(category) LIKE :query OR
+                tags::text LIKE :query
+            ORDER BY scraped_at DESC
+            LIMIT 20
+        """
+            
+        result = session.execute(text(sql_query), {"query": search_query})
+        
+        articles = []
+        seen_titles = set()  # Track seen titles to avoid duplicates
+        
+        for r in result:
+            title = r[1]
+            if title not in seen_titles:
+                seen_titles.add(title)
+                articles.append({
+                    "id": str(r[0]) if r[0] else None,  # Ensure string ID
+                    "title": title,
+                    "intro": r[2],
+                    "summary": r[3],
+                    "url": r[4],
+                    "category": r[5],
+                    "tags": r[6],
+                    "top_image": r[7],
+                    "scraped_at": r[8].isoformat() if r[8] else None
+                })
+        
+        return jsonify(articles)
+        
+    except Exception as e:
+        logging.error(f"Error searching articles: {str(e)}")
+        return jsonify({"error": "Search failed"}), 500
+    finally:
+        session.close()
+
 # --- Tento blok sa na Render s Gunicornom nespustí ---
 if __name__ == "__main__":
     import os

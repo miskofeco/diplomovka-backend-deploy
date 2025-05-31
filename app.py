@@ -138,19 +138,31 @@ def scrape_articles():
         max_articles_per_page = data.get('max_articles_per_page', 3)  # Default to 3 per page
         max_total_articles = data.get('max_total_articles', None)  # Optional total limit
         
-        # Spustenie scrapingu s limitom
-        scrape_for_new_articles(
+        logging.info(f"Starting scraping request: {max_articles_per_page} per page, max total: {max_total_articles}")
+        
+        # Run parallel scraping
+        results = scrape_for_new_articles(
             max_articles_per_page=max_articles_per_page,
             max_total_articles=max_total_articles
         )
         
         return jsonify({
-            "message": f"Scraping task started for {max_articles_per_page} articles per page" + 
-                      (f" (max total: {max_total_articles})" if max_total_articles else "")
+            "message": "Parallel scraping completed successfully",
+            "summary": {
+                "articles_processed": results["total_processed"],
+                "articles_found": results["total_found"],
+                "errors": results["total_errors"],
+                "landing_pages_scraped": len(results["results_by_page"])
+            },
+            "details": results["results_by_page"]
         })
+        
     except Exception as e:
-        print(f"Error during scraping: {e}")  # Logovanie chyby
-        return jsonify({"error": "Scraping failed", "details": str(e)}), 500
+        logging.error(f"Error during scraping: {e}", exc_info=True)
+        return jsonify({
+            "error": "Scraping failed", 
+            "details": str(e)
+        }), 500
 
 # Pridajme endpoint pre vyhľadávanie článkov
 @app.route("/api/articles/search", methods=["GET"])

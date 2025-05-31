@@ -7,6 +7,9 @@ import numpy as np
 from openai import OpenAI
 import os
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Add OpenAI client for embeddings
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -56,6 +59,10 @@ class ProcessedURL(Base):
     __tablename__ = "processed_urls"
     url = Column(String, primary_key=True)
     scraped_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+    orientation = Column(String, default='neutral')
+    confidence = Column(REAL, default=0.0)  # Add confidence score
+    reasoning = Column(Text)  # Add reasoning text
+    
 
 # --- Inicializácia Flask aplikácie ---
 app = Flask(__name__)
@@ -583,6 +590,46 @@ def get_article_details(article_slug):
     except Exception as e:
         logging.error(f"Error getting article details: {str(e)}")
         return jsonify({"error": "Failed to get article details"}), 500
+    finally:
+        session.close()
+
+@app.route("/api/url-orientations", methods=["POST"])
+def get_url_orientations():
+    """Get political orientations for a list of URLs"""
+    session = SessionLocal()
+    try:
+        data = request.get_json()
+        urls = data.get('urls', [])
+        
+        if not urls:
+            return jsonify({})
+        
+        # Query orientations for the provided URLs
+        placeholders = ','.join([':url' + str(i) for i in range(len(urls))])
+        query = f"""
+            SELECT url, orientation, confidence, reasoning
+            FROM processed_urls 
+            WHERE url IN ({placeholders})
+        """
+        
+        # Create parameters dict
+        params = {f'url{i}': url for i, url in enumerate(urls)}
+        
+        result = session.execute(text(query), params)
+        
+        orientations = {}
+        for r in result.fetchall():
+            orientations[r[0]] = {
+                "orientation": r[1] or 'neutral',
+                "confidence": float(r[2]) if r[2] is not None else 0.0,
+                "reasoning": r[3] or ""
+            }
+        
+        return jsonify(orientations)
+        
+    except Exception as e:
+        logging.error(f"Error fetching URL orientations: {e}")
+        return jsonify({"error": "Could not fetch orientations"}), 500
     finally:
         session.close()
 

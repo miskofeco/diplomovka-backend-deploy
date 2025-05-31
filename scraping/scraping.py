@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from newspaper import Article
 from sqlalchemy import text
 from processing.vectorstore import store_embedding
+from processing.political_analysis import analyze_political_orientation
 
 import logging
 from datetime import datetime
@@ -102,6 +103,70 @@ def mark_url_processed(session, url):
     session.execute(text("INSERT INTO processed_urls (url) VALUES (:url) ON CONFLICT DO NOTHING"), {"url": url})
     session.commit()
 
+def is_url_processed(url: str) -> bool:
+    """Check if URL has already been processed"""
+    session = SessionLocal()
+    try:
+        result = session.execute(
+            text("SELECT url FROM processed_urls WHERE url = :url"),
+            {"url": url}
+        ).fetchone()
+        return result is not None
+    finally:
+        session.close()
+
+def mark_url_as_processed(url: str, orientation: str = 'neutral', confidence: float = 0.0, reasoning: str = ""):
+    """Mark URL as processed with political orientation analysis"""
+    session = SessionLocal()
+    try:
+        # Check if URL already exists
+        existing = session.execute(
+            text("SELECT url FROM processed_urls WHERE url = :url"),
+            {"url": url}
+        ).fetchone()
+        
+        if existing:
+            # Update existing record with new orientation data
+            session.execute(
+                text("""
+                UPDATE processed_urls 
+                SET orientation = :orientation,
+                    confidence = :confidence,
+                    reasoning = :reasoning,
+                    scraped_at = CURRENT_TIMESTAMP
+                WHERE url = :url
+                """),
+                {
+                    "url": url, 
+                    "orientation": orientation,
+                    "confidence": confidence,
+                    "reasoning": reasoning
+                }
+            )
+        else:
+            # Insert new record
+            session.execute(
+                text("""
+                INSERT INTO processed_urls (url, orientation, confidence, reasoning) 
+                VALUES (:url, :orientation, :confidence, :reasoning)
+                """),
+                {
+                    "url": url, 
+                    "orientation": orientation,
+                    "confidence": confidence,
+                    "reasoning": reasoning
+                }
+            )
+        
+        session.commit()
+        logging.info(f"Marked URL as processed with orientation: {orientation} (confidence: {confidence:.2f})")
+        
+    except Exception as e:
+        session.rollback()
+        logging.error(f"Error marking URL as processed: {e}")
+    finally:
+        session.close()
+
 def get_landing_page_links(url, patterns):
     """
     Fetches the landing page and finds links that match the given URL patterns.
@@ -166,99 +231,121 @@ def parse_article(url):
 def process_new_article(article_data: dict):
     try:
         article_text = article_data.get("text", "").strip()
+        article_url = article_data.get("url", "")
+        
         if not article_text:
             logging.warning("Empty article text, skipping processing")
             return
 
+        # Analyze political orientation
+        logging.info(f"Analyzing political orientation for: {article_url}")
+        political_analysis = analyze_political_orientation(article_text)
+        
         with SessionLocal() as session:
             try:
-                # Skontrolujeme či existuje podobný článok
+                # Check for similar articles
                 similar_article = find_similar_article(article_text)
                 
                 if similar_article:
                     logging.info(f"Found similar article ID: {similar_article['id']}")
                     
-                    # Aktualizujeme existujúci článok
+                    # Update existing article
                     updated_data = update_article_summary(
                         existing_summary=similar_article['summary'],
                         new_article_text=article_text
                     )
                     
-                    # NOVÉ: Verifikujeme aktualizáciu pred uložením
-                    logging.info("Verifying article update before saving...")
+                    # Verify update
                     verified_update = verify_article_update(
                         original_summary=similar_article['summary'],
                         new_article_text=article_text,
                         updated_data=updated_data
                     )
                     
-                    # Aktualizujeme článok v databáze s verifikovanými údajmi
+                    # Update article with new timestamp
+                    current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    
                     session.execute(
                         text("""
                         UPDATE articles 
                         SET 
                             intro = :intro,
                             summary = :summary,
-                            url = array_append(url, :new_url)
+                            url = array_append(url, :new_url),
+                            scraped_at = :scraped_at
                         WHERE id = :article_id
                         """),
                         {
                             "intro": verified_update["intro"],
                             "summary": verified_update["summary"],
-                            "new_url": article_data.get("url"),
+                            "new_url": article_url,
+                            "scraped_at": current_timestamp,
                             "article_id": similar_article["id"]
                         }
                     )
                     
-                    # Aktualizujeme embedding pre nový súhrn
+                    # Update embedding
                     store_embedding(similar_article["id"], verified_update["summary"])
                     
                     session.commit()
-                    logging.info(f"Updated existing article {similar_article['id']} with verified content")
-                    return
+                    logging.info(f"Updated existing article {similar_article['id']} with new timestamp {current_timestamp}")
+                else:
+                    # Process new article
+                    logging.info("Processing new article with verification...")
+                    llm_data = process_article(article_text)
+                    
+                    # Insert new article
+                    insert_data = {
+                        "url": [article_url],
+                        "title": llm_data.get("title", ""),
+                        "intro": llm_data.get("intro", ""),
+                        "summary": llm_data.get("summary", ""),
+                        "category": llm_data.get("category", ""),
+                        "tags": llm_data.get("tags", []),
+                        "top_image": article_data.get("top_image", ""),
+                        "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    }
+                    
+                    result = session.execute(
+                        text("""
+                        INSERT INTO articles (
+                            id, url, title, intro, summary, category, tags, 
+                            top_image, scraped_at
+                        )
+                        VALUES (
+                            gen_random_uuid(), :url, :title, :intro, :summary, 
+                            :category, :tags, :top_image, :scraped_at
+                        )
+                        RETURNING id
+                        """),
+                        insert_data
+                    )
+                    
+                    article_id = result.scalar()
+                    if article_id:
+                        store_embedding(article_id, llm_data.get("summary", ""))
 
-                # Spracovanie nového článku (existing code with verification)
-                logging.info("Processing new article with verification...")
-                llm_data = process_article(article_text)  # This already includes verification
+                    session.commit()
+                    logging.info("New article processed and saved successfully")
                 
-                # Basic insert data without additional processing
-                insert_data = {
-                    "url": [article_data.get("url", "")],  # Wrap in list for ARRAY type
-                    "title": llm_data.get("title", ""),
-                    "intro": llm_data.get("intro", ""),
-                    "summary": llm_data.get("summary", ""),
-                    "category": llm_data.get("category", ""),
-                    "tags": llm_data.get("tags", []),
-                    "top_image": article_data.get("top_image", ""),
-                    "scraped_at": article_data.get("scraped_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                }
-                
-                result = session.execute(
-                    text("""
-                    INSERT INTO articles (
-                        id, url, title, intro, summary, category, tags, 
-                        top_image, scraped_at
-                    )
-                    VALUES (
-                        gen_random_uuid(), :url, :title, :intro, :summary, 
-                        :category, :tags, :top_image, :scraped_at
-                    )
-                    RETURNING id
-                    """),
-                    insert_data
+                # Mark URL as processed with political orientation
+                mark_url_as_processed(
+                    url=article_url,
+                    orientation=political_analysis["orientation"],
+                    confidence=political_analysis["confidence"],
+                    reasoning=political_analysis["reasoning"]
                 )
-                
-                article_id = result.scalar()
-                if article_id:
-                    store_embedding(article_id, llm_data.get("summary", ""))
-
-                session.commit()
-                logging.info("New article processed and saved successfully with verification")
                 
             except Exception as e:
                 session.rollback()
                 logging.error(f"Error processing article: {str(e)}")
-                logging.error(f"Article data: {article_data}")
+                # Still mark URL as processed even if article processing fails
+                mark_url_as_processed(
+                    url=article_url,
+                    orientation=political_analysis["orientation"],
+                    confidence=political_analysis["confidence"],
+                    reasoning=political_analysis["reasoning"]
+                )
                 raise
 
     except Exception as e:

@@ -4,7 +4,7 @@ from sqlalchemy import text
 from data.db import SessionLocal
 from processing.vectorstore import get_embedding 
 
-def find_similar_article(article_text, threshold=0.9):
+def find_similar_article(article_text, threshold=0.85):
     # Generate the embedding for the new article
     new_embedding = get_embedding(article_text)
     if new_embedding is None:

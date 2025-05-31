@@ -17,7 +17,7 @@ import os
 from sqlalchemy import text
 from data.db import SessionLocal
 from processing.similarity import find_similar_article
-from processing.summary import process_article, update_article_summary
+from processing.summary import process_article, update_article_summary, verify_article_update
 
 from data.db import SessionLocal
 
@@ -177,13 +177,22 @@ def process_new_article(article_data: dict):
                 
                 if similar_article:
                     logging.info(f"Found similar article ID: {similar_article['id']}")
+                    
                     # Aktualizujeme existujúci článok
                     updated_data = update_article_summary(
                         existing_summary=similar_article['summary'],
                         new_article_text=article_text
                     )
                     
-                    # Aktualizujeme článok v databáze
+                    # NOVÉ: Verifikujeme aktualizáciu pred uložením
+                    logging.info("Verifying article update before saving...")
+                    verified_update = verify_article_update(
+                        original_summary=similar_article['summary'],
+                        new_article_text=article_text,
+                        updated_data=updated_data
+                    )
+                    
+                    # Aktualizujeme článok v databáze s verifikovanými údajmi
                     session.execute(
                         text("""
                         UPDATE articles 
@@ -194,22 +203,23 @@ def process_new_article(article_data: dict):
                         WHERE id = :article_id
                         """),
                         {
-                            "intro": updated_data["intro"],
-                            "summary": updated_data["summary"],
+                            "intro": verified_update["intro"],
+                            "summary": verified_update["summary"],
                             "new_url": article_data.get("url"),
                             "article_id": similar_article["id"]
                         }
                     )
                     
                     # Aktualizujeme embedding pre nový súhrn
-                    store_embedding(similar_article["id"], updated_data["summary"])
+                    store_embedding(similar_article["id"], verified_update["summary"])
                     
                     session.commit()
-                    logging.info(f"Updated existing article {similar_article['id']}")
+                    logging.info(f"Updated existing article {similar_article['id']} with verified content")
                     return
 
-                # Spracovanie nového článku
-                llm_data = process_article(article_text)
+                # Spracovanie nového článku (existing code with verification)
+                logging.info("Processing new article with verification...")
+                llm_data = process_article(article_text)  # This already includes verification
                 
                 # Basic insert data without additional processing
                 insert_data = {
@@ -243,7 +253,7 @@ def process_new_article(article_data: dict):
                     store_embedding(article_id, llm_data.get("summary", ""))
 
                 session.commit()
-                logging.info("Article processed and saved successfully")
+                logging.info("New article processed and saved successfully with verification")
                 
             except Exception as e:
                 session.rollback()

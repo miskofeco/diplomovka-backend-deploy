@@ -55,18 +55,43 @@ class Event(BaseModel):
     target: str | None = Field(None, description="Na kom/čom bola akcia vykonaná")
     context: str | None = Field(None, description="Dodatočný kontext")
 
-def get_category_and_tags(text: str) -> dict:
+# Add verification models
+class CategoryTagsVerification(BaseModel):
+    is_accurate: bool = Field(..., description="Whether the categorization is accurate")
+    feedback: str = Field(..., description="Detailed feedback on the categorization")
+    
+class TitleIntroVerification(BaseModel):
+    is_accurate: bool = Field(..., description="Whether the title and intro are accurate")
+    feedback: str = Field(..., description="Detailed feedback on the title and intro")
+    
+class SummaryVerification(BaseModel):
+    is_accurate: bool = Field(..., description="Whether the summary is accurate and not hallucinated")
+    feedback: str = Field(..., description="Detailed feedback on the summary")
+
+def get_category_and_tags(text: str, feedback: str = None) -> dict:
+    """Generate category and tags with optional feedback from previous attempts"""
     system_message = "Si profesionálny novinár, ktorý kategorizuje články."
+    
     user_message = f"""
-    Urč kategóriu a tagy pre nasledujúci text článku. Vráť výsledok v JSON formáte:
+    Urč kategóriu a tagy pre nasledijúci text článku. Vráť výsledok v JSON formáte:
     - "category": Vyber JEDNU kategóriu z: {PREDEFINED_CATEGORIES}
     - "tags": Vyber 1-4 najvhodnejšie tagy z: {PREDEFINED_TAGS}
 
     Text článku:
     {text}
-
-    Vráť len platný JSON bez komentárov.
     """
+    
+    # Add feedback from verification if provided
+    if feedback:
+        user_message += f"""
+        
+        DÔLEŽITÉ: Predcházajúci pokus bol zamietnutý z nasledujúceho dôvodu:
+        {feedback}
+        
+        Prosím, zohľadni túto spätnú väzbu a vyhni sa rovnakým chybám.
+        """
+    
+    user_message += "\nVráť len platný JSON bez komentárov."
     
     response = client.beta.chat.completions.parse(
         model=model,
@@ -81,8 +106,10 @@ def get_category_and_tags(text: str) -> dict:
     logging.debug(f"Response content: {response.choices[0].message.content}")
     return response.choices[0].message.parsed.model_dump()
 
-def get_title_and_intro(text: str) -> dict:
+def get_title_and_intro(text: str, feedback: str = None) -> dict:
+    """Generate title and intro with optional feedback from previous attempts"""
     system_message = "Si profesionálny novinár, ktorý píše pútavé titulky a úvody."
+    
     user_message = f"""
     Vytvor pútavý názov a krátky úvod pre nasledujúci text článku. Vráť v JSON formáte:
     - "title": Pútavý názov článku
@@ -90,9 +117,20 @@ def get_title_and_intro(text: str) -> dict:
 
     Text článku:
     {text}
-
-    Vráť len platný JSON bez komentárov.
     """
+    
+    # Add feedback from verification if provided
+    if feedback:
+        user_message += f"""
+        
+        DÔLEŽITÉ: Predcházajúci pokus bol zamietnutý z nasledijúceho dôvodu:
+        {feedback}
+        
+        Prosím, zohľadni túto spätnú väzbu a vyhni sa rovnakým chybám.
+        Zameraj sa na presnosť, relevantnosť a vyhni sa halucinovaným informáciám.
+        """
+    
+    user_message += "\nVráť len platný JSON bez komentárov."
     
     response = client.beta.chat.completions.parse(
         model=model,
@@ -155,8 +193,8 @@ def extract_events(text: str) -> List[str]:
         logging.error(f"Error extracting events: {e}")
         return []
 
-def get_summary(text: str) -> dict:
-    """Hlavná funkcia pre generovanie súhrnu"""
+def get_summary(text: str, feedback: str = None) -> dict:
+    """Generate summary with optional feedback from previous attempts"""
     try:
         # Najprv extrahujeme udalosti
         events = extract_events(text)
@@ -176,14 +214,32 @@ def get_summary(text: str) -> dict:
 
         Identifikované kľúčové udalosti:
         {events_text}
+        """
+        
+        # Add feedback from verification if provided
+        if feedback:
+            user_message += f"""
+            
+            DÔLEŽITÉ: Predcházajúci pokus bol zamietnutý z nasledijúceho dôvodu:
+            {feedback}
+            
+            Prosím, zohľadni túto spätnú väzbu a vyhni sa rovnakým chybám.
+            Zameraj sa na:
+            - Presnosť voči pôvodnému textu
+            - Objektívnosť a neutralitu
+            - Vyhni sa halucinovaným informáciám
+            - Logické usporiadanie informácií
+            """
 
+        user_message += """
+        
         Vytvor pútavý a informatívny súhrn, ktorý zachytáva podstatu článku
         a logicky prepája identifikované udalosti.
 
         Formát odpovede:
-        {{
+        {
             "summary": "text súhrnu"
-        }}
+        }
         """
 
         response = client.chat.completions.create(
@@ -278,32 +334,253 @@ def calculate_source_orientation(urls: List[str]) -> dict:
         "right_percent": (counts["right"] / total) * 100
     }
 
+def verify_category_tags(original_text: str, generated_data: dict, max_retries: int = 3) -> dict:
+    """Verify category and tags accuracy with retry mechanism"""
+    
+    def _verify_once(text: str, data: dict) -> dict:
+        system_message = """Si expertný verifikátor obsahu. Tvojou úlohou je overiť presnosť kategorizácie článku.
+        Skontroluj:
+        1. Či kategória presne zodpovedá obsahu článku
+        2. Či tagy sú relevantné a nie sú vymyslené
+        3. Či nie sú prítomné halucinované informácie
+        
+        DÔLEŽITÉ: Buď veľmi špecifický vo svojom hodnotení a uveď presné dôvody prečo je kategorizácia správna alebo nesprávna.
+        """
+        
+        user_message = f"""
+        Skontroluj presnosť nasledujúcej kategorizácie voči pôvodnému textu článku.
+        
+        Pôvodný text článku:
+        {text}
+        
+        Vygenerovaná kategorizácia:
+        Kategória: {data.get('category')}
+        Tagy: {data.get('tags')}
+        
+        Dostupné kategórie: {PREDEFINED_CATEGORIES}
+        Dostupné tagy: {PREDEFINED_TAGS}
+        
+        Vráť JSON s:
+        - "is_accurate": true/false
+        - "feedback": detailné zdôvodnenie hodnotenia s konkrétnymi problémami ak existujú:
+          * Prečo je kategória správna/nesprávna
+          * Ktoré tagy sú relevantné/irelevantné a prečo
+          * Aké konkrétne halucinované informácie boli identifikované
+          * Aké alternatívy by boli lepšie
+        """
+        
+        response = client.beta.chat.completions.parse(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.1,
+            max_tokens=2048,
+            response_format=CategoryTagsVerification
+        )
+        
+        return response.choices[0].message.parsed.model_dump()
+    
+    # Verification loop with retries
+    current_data = generated_data.copy()
+    previous_feedback = None
+    
+    for attempt in range(max_retries):
+        logging.info(f"Verifying category/tags - attempt {attempt + 1}/{max_retries}")
+        
+        verification = _verify_once(original_text, current_data)
+        
+        if verification["is_accurate"]:
+            logging.info("Category/tags verification passed")
+            return current_data
+        
+        previous_feedback = verification["feedback"]
+        logging.warning(f"Category/tags verification failed: {previous_feedback}")
+        
+        if attempt < max_retries - 1:  # Don't regenerate on last attempt
+            logging.info("Regenerating category/tags with feedback...")
+            current_data = get_category_and_tags(original_text, previous_feedback)
+    
+    logging.error("Category/tags verification failed after all retries")
+    return current_data  # Return last attempt even if not verified
+
+def verify_title_intro(original_text: str, generated_data: dict, max_retries: int = 3) -> dict:
+    """Verify title and intro accuracy with retry mechanism"""
+    
+    def _verify_once(text: str, data: dict) -> dict:
+        system_message = """Si expertný verifikátor obsahu. Tvojou úlohou je overiť presnosť titulku a úvodu článku.
+        Skontroluj:
+        1. Či titulok presne zodpovedá obsahu článku
+        2. Či úvod je relevantný a pútavý
+        3. Či nie sú prítomné halucinované informácie
+        4. Či titulok nie je zavádzajúci
+        
+        DÔLEŽITÉ: Buď veľmi špecifický vo svojom hodnotení a uveď presné dôvody prečo je obsah správny alebo nesprávny.
+        """
+        
+        user_message = f"""
+        Skontroluj presnosť nasledujúceho titulku a úvodu voči pôvodnému textu článku.
+        
+        Pôvodný text článku:
+        {text}
+        
+        Vygenerovaný obsah:
+        Titulok: {data.get('title')}
+        Úvod: {data.get('intro')}
+        
+        Vráť JSON s:
+        - "is_accurate": true/false
+        - "feedback": detailné zdôvodnenie hodnotenia s konkrétnymi problémami ak existujú:
+          * Prečo je titulok správny/nesprávny/zavádzajúci
+          * Či úvod správne reflektuje obsah článku
+          * Aké konkrétne halucinované informácie boli identifikované
+          * Aké zmeny by boli potrebné
+          * Konkrétne návrhy na zlepšenie
+        """
+        
+        response = client.beta.chat.completions.parse(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.1,
+            max_tokens=1024,
+            response_format=TitleIntroVerification
+        )
+        
+        return response.choices[0].message.parsed.model_dump()
+    
+    # Verification loop with retries
+    current_data = generated_data.copy()
+    previous_feedback = None
+    
+    for attempt in range(max_retries):
+        logging.info(f"Verifying title/intro - attempt {attempt + 1}/{max_retries}")
+        
+        verification = _verify_once(original_text, current_data)
+        
+        if verification["is_accurate"]:
+            logging.info("Title/intro verification passed")
+            return current_data
+        
+        previous_feedback = verification["feedback"]
+        logging.warning(f"Title/intro verification failed: {previous_feedback}")
+        
+        if attempt < max_retries - 1:  # Don't regenerate on last attempt
+            logging.info("Regenerating title/intro with feedback...")
+            current_data = get_title_and_intro(original_text, previous_feedback)
+    
+    logging.error("Title/intro verification failed after all retries")
+    return current_data  # Return last attempt even if not verified
+
+def verify_summary(original_text: str, generated_data: dict, max_retries: int = 3) -> dict:
+    """Verify summary accuracy with retry mechanism"""
+    
+    def _verify_once(text: str, data: dict) -> dict:
+        system_message = """Si expertný verifikátor obsahu. Tvojou úlohou je overiť presnosť súhrnu článku.
+        Skontroluj:
+        1. Či súhrn presne zachytáva hlavné body článku
+        2. Či nie sú prítomné halucinované informácie
+        3. Či súhrn je objektívny a neutrálny
+        4. Či súhrn neobsahuje informácie, ktoré nie sú v pôvodnom texte
+        5. Či súhrn je logicky usporiadaný
+        
+        DÔLEŽITÉ: Buď veľmi špecifický vo svojom hodnotení a uveď presné dôvody prečo je súhrn správny alebo nesprávny.
+        """
+        
+        user_message = f"""
+        Skontroluj presnosť nasledujúceho súhrnu voči pôvodnému textu článku.
+        
+        Pôvodný text článku:
+        {text}
+        
+        Vygenerovaný súhrn:
+        {data.get('summary')}
+        
+        Vráť JSON s:
+        - "is_accurate": true/false
+        - "feedback": detailné zdôvodnenie hodnotenia s konkrétnymi problémami ak existujú:
+          * Ktoré hlavné body článku chýbajú v súhrne
+          * Aké konkrétne halucinované informácie boli identifikované (cituj presné časti)
+          * Či je súhrn objektívny alebo obsahuje subjektívne hodnotenia
+          * Aké informácie sú v súhrne, ale nie sú v pôvodnom texte
+          * Problémy s logickým usporiadaním
+          * Konkrétne návrhy na zlepšenie súhrnu
+        """
+        
+        response = client.beta.chat.completions.parse(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.1,
+            max_tokens=3000,
+            response_format=SummaryVerification
+        )
+        
+        return response.choices[0].message.parsed.model_dump()
+    
+    # Verification loop with retries
+    current_data = generated_data.copy()
+    previous_feedback = None
+    
+    for attempt in range(max_retries):
+        logging.info(f"Verifying summary - attempt {attempt + 1}/{max_retries}")
+        
+        verification = _verify_once(original_text, current_data)
+        
+        if verification["is_accurate"]:
+            logging.info("Summary verification passed")
+            return current_data
+        
+        previous_feedback = verification["feedback"]
+        logging.warning(f"Summary verification failed: {previous_feedback}")
+        
+        if attempt < max_retries - 1:  # Don't regenerate on last attempt
+            logging.info("Regenerating summary with feedback...")
+            current_data = get_summary(original_text, previous_feedback)
+    
+    logging.error("Summary verification failed after all retries")
+    return current_data  # Return last attempt even if not verified
+
 def process_article(text: str) -> dict:
-    """Process article text and return structured data"""
+    """Process article text and return structured data with verification"""
     try:
-        # Get category and tags
+        logging.info("Starting article processing with verification")
+        
+        # Step 1: Generate category and tags with verification
+        logging.info("Generating and verifying category/tags...")
         cat_tags = get_category_and_tags(text)
+        verified_cat_tags = verify_category_tags(text, cat_tags)
         
-        # Get title and intro
+        # Step 2: Generate title and intro with verification
+        logging.info("Generating and verifying title/intro...")
         title_intro = get_title_and_intro(text)
+        verified_title_intro = verify_title_intro(text, title_intro)
         
-        # Get summary
+        # Step 3: Generate summary with verification
+        logging.info("Generating and verifying summary...")
         summary = get_summary(text)
+        verified_summary = verify_summary(text, summary)
         
-        
-        # Combine all results
+        # Combine all verified results
         article_data = {
-            "category": cat_tags.get("category"),
-            "tags": cat_tags.get("tags", []),
-            "title": title_intro.get("title"),
-            "intro": title_intro.get("intro"),
-            "summary": summary.get("summary")
+            "category": verified_cat_tags.get("category"),
+            "tags": verified_cat_tags.get("tags", []),
+            "title": verified_title_intro.get("title"),
+            "intro": verified_title_intro.get("intro"),
+            "summary": verified_summary.get("summary")
         }
-        logging.debug(f"Article data before processing: {article_data}")
+        
+        logging.info("Article processing with verification completed successfully")
+        logging.debug(f"Final verified article data: {article_data}")
         return article_data
         
     except Exception as e:
-        logging.error(f"Error in process_article: {str(e)}", exc_info=True)
+        logging.error(f"Error in process_article with verification: {str(e)}", exc_info=True)
         return {
             "category": "",
             "tags": [],
@@ -314,25 +591,50 @@ def process_article(text: str) -> dict:
             "facts": []
         }
 
-def update_article_summary(existing_summary: str, new_article_text: str) -> dict:
-    """Update existing article with new information"""
+def update_article_summary(existing_summary: str, new_article_text: str, feedback: str = None) -> dict:
+    """Update existing article with new information and optional feedback"""
     if len(new_article_text) > 2000:
         new_article_text = f"{new_article_text[:2000]}..."
     
     # Extract new information from the article
     system_message = "Si profesionálny novinár, ktorý identifikuje nové informácie v článku."
     user_message = f"""
-    Porovnaj existujúci súhrn s novým článkom a identifikuj iba nové, doplňujúce informácie.
-    Nevracaj celý súhrn, iba nové informácie, ktoré nie sú v existujúcom súhrne.
-    Ak nie sú žiadne nové informácie, vráť prázdny reťazec.
+    Porovnaj existujúci súhrn s novým článkom a vytvor aktualizovaný súhrn.
+    
+    INŠTRUKCIE:
+    1. Zachovaj všetky dôležité informácie z existujúceho súhrnu
+    2. Pridaj nové relevantné informácie z nového článku
+    3. Zabezpeč logické prepojenie starých a nových informácií
+    4. Odstráň duplicitné informácie
+    5. Zachovaj chronologické usporiadanie ak je relevantné
 
     Existujúci súhrn:
     {existing_summary}
 
     Nový článok:
     {new_article_text}
+    """
+    
+    # Add feedback if provided
+    if feedback:
+        user_message += f"""
+        
+        DÔLEŽITÉ: Predcházajúci pokus bol zamietnutý z nasledijúceho dôvodu:
+        {feedback}
+        
+        Prosím, zohľadni túto spätnú väzbu a vyhni sa rovnakým chybám.
+        Zameraj sa na:
+        - Zachovanie všetkých pôvodných informácií
+        - Presné pridanie iba nových informácií
+        - Logické prepojenie obsahu
+        - Vyhni sa halucinovaným informáciám
+        """
 
-    Vráť JSON s poľom 'new_information', ktoré obsahuje iba nové informácie.
+    user_message += """
+    
+    Vráť JSON s:
+    - "summary": aktualizovaný súhrn (kombinujúci starý a nový obsah)
+    - "intro": nový úvod pre aktualizovaný článok
     """
     
     try:
@@ -343,47 +645,111 @@ def update_article_summary(existing_summary: str, new_article_text: str) -> dict
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,
-            max_tokens=2048,
+            max_tokens=3000,
             response_format={"type": "json_object"}
         )
         
         result = json.loads(response.choices[0].message.content)
-        new_info = result.get("new_information", "")
         
-        # Ensure new_info is a string before calling strip()
-        if isinstance(new_info, list):
-            new_info = " ".join(new_info)
+        updated_summary = result.get("summary", existing_summary).strip()
+        updated_intro = result.get("intro", "").strip()
         
-        new_info = new_info.strip()
+        # Fallback if intro is missing
+        if not updated_intro:
+            title_intro = get_title_and_intro(f"{existing_summary}\n\n{new_article_text}", feedback)
+            updated_intro = title_intro.get("intro", "")
         
-        # If there's new information, update the summary
-        if new_info:
-            # Get title and intro for the new article
-            title_intro = get_title_and_intro(new_article_text)
-            
-            # Create updated summary by appending new information
-            updated_summary = existing_summary
-            if not updated_summary.endswith("."):
-                updated_summary += "."
-                
-            updated_summary += f" {new_info}"
-            
-            return {
-                "intro": title_intro["intro"],
-                "summary": updated_summary
-            }
-        else:
-            # No new information, keep existing summary
-            title_intro = get_title_and_intro(new_article_text)
-            return {
-                "intro": title_intro["intro"],
-                "summary": existing_summary
-            }
+        return {
+            "intro": updated_intro,
+            "summary": updated_summary
+        }
+        
     except Exception as e:
         logging.error(f"Error updating article summary: {str(e)}")
-        # In case of error, keep the existing summary
-        title_intro = get_title_and_intro(new_article_text)
-        return {
-            "intro": title_intro["intro"],
-            "summary": existing_summary
-        }
+        # In case of error, try to get at least new intro
+        try:
+            title_intro = get_title_and_intro(new_article_text, feedback)
+            return {
+                "intro": title_intro.get("intro", ""),
+                "summary": existing_summary  # Keep original summary if update fails
+            }
+        except:
+            return {
+                "intro": "",
+                "summary": existing_summary
+            }
+
+def verify_article_update(original_summary: str, new_article_text: str, updated_data: dict, max_retries: int = 3) -> dict:
+    """Verify updated article summary accuracy with retry mechanism"""
+    
+    def _verify_once(orig_summary: str, new_text: str, data: dict) -> dict:
+        system_message = """Si expertný verifikátor obsahu. Tvojou úlohou je overiť presnosť aktualizácie súhrnu článku.
+        Skontroluj:
+        1. Či nový súhrn správne integruje nové informácie
+        2. Či nedošlo k strate dôležitých informácií z pôvodného súhrnu
+        3. Či nie sú prítomné halucinované informácie
+        4. Či aktualizácia je logická a koherentná
+        5. Či úvod správne reflektuje aktualizovaný obsah
+        
+        DÔLEŽITÉ: Buď veľmi špecifický vo svojom hodnotení a uveď presné dôvody prečo je aktualizácia správna alebo nesprávna.
+        """
+        
+        user_message = f"""
+        Skontroluj presnosť nasledujúcej aktualizácie súhrnu článku.
+        
+        Pôvodný súhrn:
+        {orig_summary}
+        
+        Nový článok (zdroj nových informácií):
+        {new_text}
+        
+        Aktualizovaný obsah:
+        Úvod: {data.get('intro')}
+        Súhrn: {data.get('summary')}
+        
+        Vráť JSON s:
+        - "is_accurate": true/false
+        - "feedback": detailné zdôvodnenie hodnotenia s konkrétnymi problémami ak existujú:
+          * Či nový súhrn správne zachováva pôvodné informácie
+          * Aké nové informácie boli správne/nesprávne pridané
+          * Aké konkrétne halucinované informácie boli identifikované
+          * Problémy s logickým prepojením starých a nových informácií
+          * Či úvod správne reflektuje aktualizovaný obsah
+          * Konkrétne návrhy na zlepšenie aktualizácie
+        """
+        
+        response = client.beta.chat.completions.parse(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.1,
+            max_tokens=2048,
+            response_format=SummaryVerification  # Reuse existing verification model
+        )
+        
+        return response.choices[0].message.parsed.model_dump()
+    
+    # Verification loop with retries
+    current_data = updated_data.copy()
+    previous_feedback = None
+    
+    for attempt in range(max_retries):
+        logging.info(f"Verifying article update - attempt {attempt + 1}/{max_retries}")
+        
+        verification = _verify_once(original_summary, new_article_text, current_data)
+        
+        if verification["is_accurate"]:
+            logging.info("Article update verification passed")
+            return current_data
+        
+        previous_feedback = verification["feedback"]
+        logging.warning(f"Article update verification failed: {previous_feedback}")
+        
+        if attempt < max_retries - 1:  # Don't regenerate on last attempt
+            logging.info("Regenerating article update with feedback...")
+            current_data = update_article_summary(original_summary, new_article_text, previous_feedback)
+    
+    logging.error("Article update verification failed after all retries")
+    return current_data  # Return last attempt even if not verified

@@ -1,28 +1,37 @@
 # --- Core Web Framework & Server ---
-Flask>=3.0.0         # Hlavný web framework
-gunicorn>=21.0.0       # Produkčný WSGI server (Nutné pre Render!)
-Flask-Cors>=4.0.0      # Pre povolenie komunikácie s Vercel frontendom
+Flask>=3.0.0           # Hlavný web framework
+gunicorn>=21.0.0       # Produkčný WSGI server
+Flask-Cors>=4.0.0      # Pre povolenie komunikácie s frontendom
 
 # --- Databáza (PostgreSQL + pgvector) ---
-SQLAlchemy>=2.0.0      # ORM pre prácu s databázou (alebo len psycopg2 ak nepoužívate ORM)
+SQLAlchemy>=2.0.0      # ORM pre prácu s databázou
 psycopg2-binary>=2.9.0 # Driver pre PostgreSQL
-pgvector>=0.2.0        # Klient pre prácu s pgvector rozšírením
+pgvector>=0.3.0        # Klient pre prácu s pgvector rozšírením
 
 # --- OpenAI API ---
-openai>=1.0.0          # Oficiálny klient pre OpenAI API
-tiktoken>=0.7.0        # (Voliteľné, ale často užitočné) Pre počítanie tokenov pre OpenAI modely
+openai>=1.3.0          # Oficiálny klient pre OpenAI API
+tiktoken>=0.7.0        # Pre počítanie tokenov pre OpenAI modely
+
+# --- Web Scraping ---
+beautifulsoup4>=4.12.0 # HTML parsing
+newspaper3k>=0.2.8     # Článok extraction
+lxml>=5.0.0            # XML/HTML parser
+lxml_html_clean>=0.1.0 # HTML cleaning
 
 # --- HTTP Požiadavky & Utility ---
-requests>=2.30.0       # Pre posielanie HTTP požiadaviek (ak voláte iné API)
-python-dotenv>=1.0.0   # Pre načítanie .env súborov (hlavne pre lokálny vývoj)
-PyYAML>=6.0            # (Voliteľné) Ak používate YAML pre konfiguráciu
+requests>=2.31.0       # Pre posielanie HTTP požiadaviek
+python-dotenv>=1.0.0   # Pre načítanie .env súborov
+PyYAML>=6.0.1          # YAML konfigurácia support
 
-# --- Data Handling (Ak naozaj potrebujete) ---
-numpy>=1.26.0          # (Voliteľné) Základ pre numerické operácie, často závislosť pre ML/data knižnice
-pandas>=2.2.0          # (Voliteľné) Ak spracúvate dáta v tabuľkovej forme
+# --- Data Handling ---
+numpy>=1.26.0          # Numerické operácie pre embeddings
+pandas>=2.2.0          # Data manipulation (voliteľné)
 
+# --- Development & Testing ---
+pytest>=7.4.0         # Testing framework
+black>=23.0.0          # Code formatting
+flake8>=6.0.0          # Linting
 
-beautifulsoup4>=4.12.0
-newspaper3k>=0.2.8
-lxml>=5.0.0
-lxml_html_clean>=0.1.0
+# --- Production ---
+python-dateutil>=2.8.2 # Date parsing utilities
+Werkzeug>=3.0.0        # WSGI utilities

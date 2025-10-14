@@ -10,8 +10,8 @@ import requests
 from bs4 import BeautifulSoup
 from newspaper import Article
 from sqlalchemy import text
-from processing.vectorstore import store_embedding
-from processing.political_analysis import analyze_political_orientation
+from app.utils.vectorstore import store_embedding
+from app.utils.political_analysis import analyze_political_orientation
 
 import logging
 from datetime import datetime
@@ -19,8 +19,8 @@ import os
 
 from sqlalchemy import text
 from data.db import SessionLocal
-from processing.similarity import find_similar_article
-from processing.summary import process_article, update_article_summary, verify_article_update
+from app.utils.similarity import find_similar_article
+from app.utils.summary import process_article, update_article_summary, verify_article_update
 
 from data.db import SessionLocal
 

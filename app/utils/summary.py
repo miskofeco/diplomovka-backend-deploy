@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict
+from typing import List, Dict, Callable, Optional
 import openai
 from openai import OpenAI
 import os
@@ -70,6 +70,10 @@ class SummaryVerification(BaseModel):
 
 def get_category_and_tags(text: str, feedback: str = None) -> dict:
     """Generate category and tags with optional feedback from previous attempts"""
+
+    if len(text)>5000:
+        text=text[:5000]
+    
     system_message = "Si profesionálny novinár, ktorý kategorizuje články."
     
     user_message = f"""
@@ -100,7 +104,6 @@ def get_category_and_tags(text: str, feedback: str = None) -> dict:
             {"role": "user", "content": user_message}
         ],
         temperature=0.3,
-        max_tokens=1024,
         response_format=CategoryTags
     )
     logging.debug(f"Response content: {response.choices[0].message.content}")
@@ -108,6 +111,10 @@ def get_category_and_tags(text: str, feedback: str = None) -> dict:
 
 def get_title_and_intro(text: str, feedback: str = None) -> dict:
     """Generate title and intro with optional feedback from previous attempts"""
+
+    if len(text)>5000:
+        text=text[:5000]
+
     system_message = "Si profesionálny novinár, ktorý píše pútavé titulky a úvody."
     
     user_message = f"""
@@ -139,7 +146,6 @@ def get_title_and_intro(text: str, feedback: str = None) -> dict:
             {"role": "user", "content": user_message}
         ],
         temperature=0.7,
-        max_tokens=1024,
         response_format=TitleIntro
     )
     logging.debug(f"Response content: {response.choices[0].message.content}")
@@ -147,6 +153,10 @@ def get_title_and_intro(text: str, feedback: str = None) -> dict:
 
 def extract_events(text: str) -> List[str]:
     """Extrahuje kľúčové udalosti z textu článku ako zoznam textových popisov"""
+
+    if len(text)>5000:
+        text=text[:5000]
+    
     system_message = """Si expertný analytik, ktorý identifikuje kľúčové udalosti v texte.
     Pre každú udalosť vytvor stručný, jasný popis v jednej vete.
     Zameraj sa na:
@@ -177,7 +187,6 @@ def extract_events(text: str) -> List[str]:
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,
-            max_tokens=2048
         )
 
         # Rozdelíme odpoveď na riadky a odstránime prázdne riadky
@@ -195,6 +204,10 @@ def extract_events(text: str) -> List[str]:
 
 def get_summary(text: str, feedback: str = None) -> dict:
     """Generate summary with optional feedback from previous attempts"""
+
+    if len(text)>5000:
+        text=text[:5000]
+    
     try:
         # Najprv extrahujeme udalosti
         events = extract_events(text)
@@ -249,7 +262,6 @@ def get_summary(text: str, feedback: str = None) -> dict:
                 {"role": "user", "content": user_message}
             ],
             temperature=0.7,
-            max_tokens=2048,
             response_format={"type": "json_object"}
         )
 
@@ -297,11 +309,9 @@ def analyze_political_orientation(text: str) -> dict:
             {"role": "user", "content": user_message}
         ],
         temperature=0.3,
-        max_tokens=2048,
         response_format={ "type": "json_object" }  # Changed from "json" to "json_object"
     )
     
-    logging.debug(f"Response content: {response.choices[0].message.content}")
     # Parse the JSON response manually
     result = json.loads(response.choices[0].message.content)
     return result
@@ -334,7 +344,7 @@ def calculate_source_orientation(urls: List[str]) -> dict:
         "right_percent": (counts["right"] / total) * 100
     }
 
-def verify_category_tags(original_text: str, generated_data: dict, max_retries: int = 3) -> dict:
+def verify_category_tags(original_text: str, generated_data: dict, max_retries: int = 1) -> dict:
     """Verify category and tags accuracy with retry mechanism"""
     
     def _verify_once(text: str, data: dict) -> dict:
@@ -376,7 +386,6 @@ def verify_category_tags(original_text: str, generated_data: dict, max_retries: 
                 {"role": "user", "content": user_message}
             ],
             temperature=0.1,
-            max_tokens=2048,
             response_format=CategoryTagsVerification
         )
         
@@ -386,26 +395,18 @@ def verify_category_tags(original_text: str, generated_data: dict, max_retries: 
     current_data = generated_data.copy()
     previous_feedback = None
     
-    for attempt in range(max_retries):
-        logging.info(f"Verifying category/tags - attempt {attempt + 1}/{max_retries}")
-        
-        verification = _verify_once(original_text, current_data)
-        
-        if verification["is_accurate"]:
-            logging.info("Category/tags verification passed")
-            return current_data
-        
-        previous_feedback = verification["feedback"]
-        logging.warning(f"Category/tags verification failed: {previous_feedback}")
-        
-        if attempt < max_retries - 1:  # Don't regenerate on last attempt
-            logging.info("Regenerating category/tags with feedback...")
-            current_data = get_category_and_tags(original_text, previous_feedback)
+    verification = _verify_once(original_text, current_data)
     
-    logging.error("Category/tags verification failed after all retries")
+    if verification["is_accurate"]:
+        logging.info("Category/tags verification passed")
+        return current_data
+    
+    previous_feedback = verification["feedback"]
+    
+    current_data = get_category_and_tags(original_text, previous_feedback)
     return current_data  # Return last attempt even if not verified
 
-def verify_title_intro(original_text: str, generated_data: dict, max_retries: int = 3) -> dict:
+def verify_title_intro(original_text: str, generated_data: dict, max_retries: int = 1) -> dict:
     """Verify title and intro accuracy with retry mechanism"""
     
     def _verify_once(text: str, data: dict) -> dict:
@@ -445,8 +446,8 @@ def verify_title_intro(original_text: str, generated_data: dict, max_retries: in
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1,
-            max_tokens=1024,
+            temperature=0.3,
+
             response_format=TitleIntroVerification
         )
         
@@ -456,26 +457,19 @@ def verify_title_intro(original_text: str, generated_data: dict, max_retries: in
     current_data = generated_data.copy()
     previous_feedback = None
     
-    for attempt in range(max_retries):
-        logging.info(f"Verifying title/intro - attempt {attempt + 1}/{max_retries}")
-        
-        verification = _verify_once(original_text, current_data)
-        
-        if verification["is_accurate"]:
-            logging.info("Title/intro verification passed")
-            return current_data
-        
-        previous_feedback = verification["feedback"]
-        logging.warning(f"Title/intro verification failed: {previous_feedback}")
-        
-        if attempt < max_retries - 1:  # Don't regenerate on last attempt
-            logging.info("Regenerating title/intro with feedback...")
-            current_data = get_title_and_intro(original_text, previous_feedback)
+    verification = _verify_once(original_text, current_data)
     
-    logging.error("Title/intro verification failed after all retries")
+    if verification["is_accurate"]:
+        logging.info("Title/intro verification passed")
+        return current_data
+    
+    previous_feedback = verification["feedback"]
+    
+    current_data = get_title_and_intro(original_text, previous_feedback)
+    
     return current_data  # Return last attempt even if not verified
 
-def verify_summary(original_text: str, generated_data: dict, max_retries: int = 3) -> dict:
+def verify_summary(original_text: str, generated_data: dict, max_retries: int = 1) -> dict:
     """Verify summary accuracy with retry mechanism"""
     
     def _verify_once(text: str, data: dict) -> dict:
@@ -516,8 +510,7 @@ def verify_summary(original_text: str, generated_data: dict, max_retries: int = 
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": user_message}
             ],
-            temperature=0.1,
-            max_tokens=3000,
+            temperature=0.3,
             response_format=SummaryVerification
         )
         
@@ -527,44 +520,54 @@ def verify_summary(original_text: str, generated_data: dict, max_retries: int = 
     current_data = generated_data.copy()
     previous_feedback = None
     
-    for attempt in range(max_retries):
-        logging.info(f"Verifying summary - attempt {attempt + 1}/{max_retries}")
-        
-        verification = _verify_once(original_text, current_data)
-        
-        if verification["is_accurate"]:
-            logging.info("Summary verification passed")
-            return current_data
-        
-        previous_feedback = verification["feedback"]
-        logging.warning(f"Summary verification failed: {previous_feedback}")
-        
-        if attempt < max_retries - 1:  # Don't regenerate on last attempt
-            logging.info("Regenerating summary with feedback...")
-            current_data = get_summary(original_text, previous_feedback)
     
-    logging.error("Summary verification failed after all retries")
+    verification = _verify_once(original_text, current_data)
+    
+    if verification["is_accurate"]:
+        logging.info("Summary verification passed")
+        return current_data
+    
+    previous_feedback = verification["feedback"]
+    
+
+    current_data = get_summary(original_text, previous_feedback)
+    
     return current_data  # Return last attempt even if not verified
 
-def process_article(text: str) -> dict:
+def _emit_step(log_step: Optional[Callable[[str], None]], message: str) -> None:
+    if not log_step:
+        return
+    try:
+        log_step(message)
+    except Exception:
+        logging.debug("Failed to emit log step '%s'", message)
+
+
+def process_article(text: str, log_step: Optional[Callable[[str], None]] = None) -> dict:
     """Process article text and return structured data with verification"""
     try:
         logging.info("Starting article processing with verification")
+        _emit_step(log_step, "Generating categories and tags")
         
         # Step 1: Generate category and tags with verification
         logging.info("Generating and verifying category/tags...")
         cat_tags = get_category_and_tags(text)
         verified_cat_tags = verify_category_tags(text, cat_tags)
+        _emit_step(log_step, "Categories and tags generated")
         
         # Step 2: Generate title and intro with verification
+        _emit_step(log_step, "Generating title and intro")
         logging.info("Generating and verifying title/intro...")
         title_intro = get_title_and_intro(text)
         verified_title_intro = verify_title_intro(text, title_intro)
+        _emit_step(log_step, "Title and intro generated")
         
         # Step 3: Generate summary with verification
+        _emit_step(log_step, "Generating summary")
         logging.info("Generating and verifying summary...")
         summary = get_summary(text)
         verified_summary = verify_summary(text, summary)
+        _emit_step(log_step, "Summary generated")
         
         # Combine all verified results
         article_data = {
@@ -574,6 +577,7 @@ def process_article(text: str) -> dict:
             "intro": verified_title_intro.get("intro"),
             "summary": verified_summary.get("summary")
         }
+        _emit_step(log_step, "Article metadata verification completed")
         
         logging.info("Article processing with verification completed successfully")
         logging.debug(f"Final verified article data: {article_data}")
@@ -645,7 +649,6 @@ def update_article_summary(existing_summary: str, new_article_text: str, feedbac
                 {"role": "user", "content": user_message}
             ],
             temperature=0.3,
-            max_tokens=3000,
             response_format={"type": "json_object"}
         )
         
@@ -679,7 +682,7 @@ def update_article_summary(existing_summary: str, new_article_text: str, feedbac
                 "summary": existing_summary
             }
 
-def verify_article_update(original_summary: str, new_article_text: str, updated_data: dict, max_retries: int = 3) -> dict:
+def verify_article_update(original_summary: str, new_article_text: str, updated_data: dict, max_retries: int = 1) -> dict:
     """Verify updated article summary accuracy with retry mechanism"""
     
     def _verify_once(orig_summary: str, new_text: str, data: dict) -> dict:
@@ -725,7 +728,6 @@ def verify_article_update(original_summary: str, new_article_text: str, updated_
                 {"role": "user", "content": user_message}
             ],
             temperature=0.1,
-            max_tokens=2048,
             response_format=SummaryVerification  # Reuse existing verification model
         )
         
@@ -733,23 +735,16 @@ def verify_article_update(original_summary: str, new_article_text: str, updated_
     
     # Verification loop with retries
     current_data = updated_data.copy()
-    previous_feedback = None
+    feedback = None
     
-    for attempt in range(max_retries):
-        logging.info(f"Verifying article update - attempt {attempt + 1}/{max_retries}")
-        
-        verification = _verify_once(original_summary, new_article_text, current_data)
-        
-        if verification["is_accurate"]:
-            logging.info("Article update verification passed")
-            return current_data
-        
-        previous_feedback = verification["feedback"]
-        logging.warning(f"Article update verification failed: {previous_feedback}")
-        
-        if attempt < max_retries - 1:  # Don't regenerate on last attempt
-            logging.info("Regenerating article update with feedback...")
-            current_data = update_article_summary(original_summary, new_article_text, previous_feedback)
+    verification = _verify_once(original_summary, new_article_text, current_data)
     
-    logging.error("Article update verification failed after all retries")
+    if verification["is_accurate"]:
+        logging.info("Article update verification passed")
+        return current_data
+    
+    feedback = verification["feedback"]
+    
+    current_data = update_article_summary(original_summary, new_article_text, feedback)
+    
     return current_data  # Return last attempt even if not verified

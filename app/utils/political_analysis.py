@@ -55,42 +55,37 @@ def analyze_political_orientation(article_text: str) -> Dict[str, any]:
             "reasoning": "OpenAI API nie je k dispozícii - analýza nevykonaná"
         }
     
-    # Truncate very long articles to avoid token limits
-    if len(article_text) > 3000:
-        article_text = article_text[:3000] + "..."
-        logging.info("Article truncated to 3000 characters for analysis")
-    
     system_message = """Si expertný politický analytik, ktorý dokáže objektívne analyzovať politickú orientáciu článkov.
 
-ÚLOHA: Analyzuj politickú orientáciu nasledujúceho článku a klasifikuj ju ako:
-- "left" (ľavicová) - podporuje progresívne hodnoty, sociálnu spravodlivosť, väčšiu úlohu štátu, práva menšín
-- "right" (pravicová) - podporuje konzervatívne hodnoty, voľný trh, tradičné hodnoty, menšiu úlohu štátu  
-- "neutral" (neutrálna) - objektívne spravodajstvo bez jasného politického smerenia
+                        ÚLOHA: Analyzuj politickú orientáciu nasledujúceho článku a klasifikuj ju ako:
+                        - "left" (ľavicová) - podporuje progresívne hodnoty, sociálnu spravodlivosť, väčšiu úlohu štátu, práva menšín
+                        - "right" (pravicová) - podporuje konzervatívne hodnoty, voľný trh, tradičné hodnoty, menšiu úlohu štátu  
+                        - "neutral" (neutrálna) - objektívne spravodajstvo bez jasného politického smerenia
 
-KRITÉRIÁ HODNOTENIA:
-1. Jazyk a tón článku
-2. Výber faktov a ich prezentácia
-3. Zdôrazňované témy a hodnoty
-4. Postoj k vláde, opozícii, inštitúciám
-5. Framovanie problémov
+                        KRITÉRIÁ HODNOTENIA:
+                        1. Jazyk a tón článku
+                        2. Výber faktov a ich prezentácia
+                        3. Zdôrazňované témy a hodnoty
+                        4. Postoj k vláde, opozícii, inštitúciám
+                        5. Framovanie problémov
 
-DÔLEŽITÉ:
-- Buď objektívny a presný
-- Rozlišuj medzi spravodajstvom a komentármi
-- Zohľadni slovenský politický kontext
-- Neutrálne spravodajstvo klasifikuj ako "neutral"
-- Uvedzi jasný a konkrétny dôvod svojho rozhodnutia"""
+                        DÔLEŽITÉ:
+                        - Buď objektívny a presný
+                        - Rozlišuj medzi spravodajstvom a komentármi
+                        - Zohľadni slovenský politický kontext
+                        - Neutrálne spravodajstvo klasifikuj ako "neutral"
+                        - Uvedzi jasný a konkrétny dôvod svojho rozhodnutia"""
 
     user_message = f"""
-Analyzuj politickú orientáciu tohto článku:
+                        Analyzuj politickú orientáciu tohto článku:
 
-{article_text}
+                        {article_text}
 
-Vráť JSON s:
-- "orientation": "left", "right", alebo "neutral"
-- "confidence": číslo od 0.0 do 1.0 (0.0 = veľmi neistý, 1.0 = veľmi istý)
-- "reasoning": konkrétne zdôvodnenie (max 150 znakov, napíš prečo si sa rozhodol tak ako si sa rozhodol)
-"""
+                        Vráť JSON s:
+                        - "orientation": "left", "right", alebo "neutral"
+                        - "confidence": číslo od 0.0 do 1.0 (0.0 = veľmi neistý, 1.0 = veľmi istý)
+                        - "reasoning": konkrétne zdôvodnenie (max 150 znakov, napíš prečo si sa rozhodol tak ako si sa rozhodol)
+                        """
 
     try:
         response = client.beta.chat.completions.parse(
@@ -100,7 +95,6 @@ Vráť JSON s:
                 {"role": "user", "content": user_message}
             ],
             temperature=0.1,
-            max_tokens=500,
             response_format=PoliticalOrientationResponse
         )
         

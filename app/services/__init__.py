@@ -3,5 +3,6 @@ __all__ = [
     "embedding_service",
     "orientation_service",
     "scraping_service",
+    "scheduler",
     "search_service",
 ]

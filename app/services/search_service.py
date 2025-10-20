@@ -1,10 +1,12 @@
 import logging
 from typing import Dict, List, Optional
 
+import numpy as np
 from sqlalchemy import text
 
 from data.db import SessionLocal
 from app.utils.vectorstore import store_embedding
+from app.utils.similarity import semantic_query_search
 
 from .embedding_service import cosine_similarity, get_embedding
 
@@ -36,9 +38,13 @@ def search_articles(query: str, advanced: bool) -> List[Dict]:
             logging.info("Found %s articles with embeddings", embeddings_count)
 
             if embeddings_count and embeddings_count > 0:
-                articles = _search_with_embeddings(session, query_embedding)
+                articles = semantic_query_search(
+                    session=session,
+                    query_embedding=np.array(query_embedding, dtype=np.float32),
+                    query_text=query,
+                )
                 if articles:
-                    logging.info("Vector search returned %s results", len(articles))
+                    logging.info("Semantic vector search returned %s results", len(articles))
                     return articles
 
                 logging.warning(
@@ -197,61 +203,6 @@ def find_similar_articles(article_id: str) -> List[Dict]:
         raise SearchServiceError("Failed to find similar articles") from exc
     finally:
         session.close()
-
-
-def _search_with_embeddings(session, query_embedding: List[float]) -> List[Dict]:
-    embeddings_query = """
-        SELECT 
-            a.id, a.title, a.intro, a.summary, a.url, a.category, a.tags, a.top_image, a.scraped_at,
-            ae.embedding
-        FROM articles a
-        INNER JOIN article_embeddings ae ON a.id = ae.id
-        WHERE ae.embedding IS NOT NULL
-    """
-
-    result = session.execute(text(embeddings_query))
-    articles_with_similarity: List[Dict] = []
-    processed_count = 0
-
-    for row in result:
-        stored_embedding = row[9]
-        if stored_embedding and len(stored_embedding) > 0:
-            try:
-                similarity = cosine_similarity(query_embedding, stored_embedding)
-                processed_count += 1
-                if similarity > 0.8:
-                    articles_with_similarity.append(
-                        {
-                            "similarity": float(similarity),
-                            **_row_to_article_dict(row),
-                        }
-                    )
-            except Exception as exc:
-                logging.warning("Error calculating similarity for article %s: %s", row[0], exc)
-
-    logging.info(
-        "Processed %s embeddings, found %s similar articles",
-        processed_count,
-        len(articles_with_similarity),
-    )
-
-    if not articles_with_similarity:
-        return []
-
-    articles_with_similarity.sort(key=lambda x: x["similarity"], reverse=True)
-    articles: List[Dict] = []
-    seen_titles = set()
-    for article in articles_with_similarity[:20]:
-        title = article["title"]
-        if title not in seen_titles:
-            seen_titles.add(title)
-            article_without_similarity = dict(article)
-            article_without_similarity.pop("similarity", None)
-            articles.append(article_without_similarity)
-
-    return articles
-
-
 def _collect_similar_articles(
     session, query: str, article_id: str, base_embedding: List[float], threshold: float
 ) -> List[Dict]:

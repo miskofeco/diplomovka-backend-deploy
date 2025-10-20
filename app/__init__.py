@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from data.db import engine
 from .models import Base
 from .routes import register_routes
+from .services.scheduler import init_scraper_scheduler
 
 load_dotenv()
 
@@ -17,6 +18,7 @@ def create_app() -> Flask:
 
     _initialize_database(app)
     register_routes(app)
+    init_scraper_scheduler(app)
 
     return app
 

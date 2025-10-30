@@ -1,0 +1,707 @@
+[
+  {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "aggregate_metrics": {
+      "mean_bleu": 0.060413927680743156,
+      "mean_rouge_f1": {
+        "rouge-1": 0.33896708505647055,
+        "rouge-2": 0.13346763366244432,
+        "rouge-l": 0.2573234338597467
+      }
+    },
+    "aggregate_usage": {
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "prompt_tokens": 4178,
+      "completion_tokens": 1407,
+      "total_tokens": 5585,
+      "api_duration_seconds": 27.4599924160284,
+      "calls": 6,
+      "wall_time_seconds": 27.46033949998673
+    },
+    "samples": [
+      {
+        "article_id": "dennikn-2024-05-18",
+        "summary": "Bratislavské mestské zastupiteľstvo schválilo klimatický plán do roku 2030, ktorý zahŕňa rozšírenie električkových tratí do Ružinova a Nového Mesta, modernizáciu trolejbusovej siete a nákup ďalších elektrických autobusov. Plán tiež predpokladá vysadenie desaťtisíc nových stromov a rozšírenie vodných prvkov v centrálnych zónach. Primátor Matúš Vallo zdôraznil potrebu investícií do zelene a vodného hospodárstva v súvislosti s častejšími suchami a extrémnymi teplotami. Opatrenia podporili všetky kluby mestského zastupiteľstva okrem opozičného, ktorý požadoval vyššie dotácie pre parkovanie. Záver: Bratislava prijala klimatický plán do roku 2030. Úvod: Mesto chce znížiť emisie, posilniť verejnú dopravu a prispôsobiť sa vyšším teplotám.",
+        "reference_summary": "Bratislavskí poslanci schválili klimatický plán do roku 2030, ktorý počíta s rozšírením električiek, modernizáciou vozidiel MHD a masívnym sadením stromov. Mesto chce zároveň budovať vodné prvky a tienisté miesta, aby sa pripravilo na horúcejšie počasie. Primátor Vallo označil investície do zelene a hospodárenia s vodou za nevyhnutné, hoci opozícia volala po väčšej podpore parkovania.",
+        "metrics": {
+          "bleu": 0.0834275984838408,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.2336448598130841,
+              "recall": 0.4098360655737705,
+              "f1": 0.2976190476190476
+            },
+            "rouge-2": {
+              "precision": 0.09433962264150944,
+              "recall": 0.16666666666666666,
+              "f1": 0.12048192771084337
+            },
+            "rouge-l": {
+              "precision": 0.18691588785046728,
+              "recall": 0.32786885245901637,
+              "f1": 0.2380952380952381
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1390,
+          "completion_tokens": 439,
+          "total_tokens": 1829,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "api_duration_seconds": 9.678579250001349
+        },
+        "wall_time_seconds": 9.67869404196972,
+        "meta": {
+          "source": "dennikn.sk",
+          "url": "https://dennikn.sk/"
+        }
+      },
+      {
+        "article_id": "sme-2024-04-09",
+        "summary": "Ministerstvo zdravotníctva oznámilo navýšenie financovania pediatrických pohotovostí o 12 miliónov eur s cieľom stabilizovať služby v regiónoch, kde hrozilo zatváranie ambulancií. Okrem toho štát pripraví motivačné balíčky pre mladých lekárov, aby sa prihlásili na detské oddelenia v menších nemocniciach. Asociácia nemocníc privítala toto rozhodnutie, avšak zdôraznila potrebu dlhodobých riešení, ako je lepšie plánovanie smien a digitalizácia. Minister Michal Palkovič avizoval, že v lete budú predstavené legislatívne zmeny, ktoré majú zjednodušiť administratívu a umožniť flexibilnejšie rozvrhnutie služieb. Záver: Nemocnice dostanú podporu pre pediatrické pohotovosti. Úvod: Ministerstvo zdravotníctva reaguje na nedostatok lekárov a prísnejšie pravidlá úväzkov.",
+        "reference_summary": "Rezort zdravotníctva prisľúbil 12 miliónov eur navyše na pediatrické pohotovosti, aby stabilizoval služby po zavedení prísnejších pravidiel pre služby lekárov. Nemocnice to vnímajú pozitívne, ale apelujú na dlhodobé opatrenia vrátane digitalizácie a lepšieho plánovania personálu. Minister Palkovič zároveň pripravuje legislatívne úpravy na leto, ktoré majú znížiť administratívu a uľahčiť organizáciu služieb.",
+        "metrics": {
+          "bleu": 0.0002501969204075055,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.25925925925925924,
+              "recall": 0.49122807017543857,
+              "f1": 0.33939393939393936
+            },
+            "rouge-2": {
+              "precision": 0.08411214953271028,
+              "recall": 0.16071428571428573,
+              "f1": 0.11042944785276075
+            },
+            "rouge-l": {
+              "precision": 0.19444444444444445,
+              "recall": 0.3684210526315789,
+              "f1": 0.2545454545454545
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1360,
+          "completion_tokens": 442,
+          "total_tokens": 1802,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "api_duration_seconds": 8.773191165993921
+        },
+        "wall_time_seconds": 8.77326995797921,
+        "meta": {
+          "source": "sme.sk",
+          "url": "https://www.sme.sk/"
+        }
+      },
+      {
+        "article_id": "pravda-2024-03-27",
+        "summary": "Energetické spoločnosti Slovnaft, InoBat a ZSE podpísali memorandum o spolupráci pri vývoji batériových článkov pre elektromobily, pričom projekt sa plánuje realizovať v priemyselnom parku pri Seredi, kde do roku 2027 spustia pilotnú linku na recykláciu a skladovanie batérií. Firmy plánujú získať investície z európskeho fondu IPCEI a prilákať domácich dodávateľov hliníka a chemických zložiek. Minister hospodárstva Peter Dovhun vyjadril podporu memorandu a upozornil na riziko straty tisícov pracovných miest, ak Slovensko nezachytí trend batériového priemyslu. Odbory žiadajú, aby projekt zahŕňal rekvalifikáciu pracovníkov z automobiliek, ktoré budú ovplyvnené prechodom na elektromobilitu. Záver: Slovenské firmy sa spájajú pri výrobe batérií. Úvod: Energetické podniky chcú využiť európske fondy a vytvoriť nový dodávateľský reťazec.",
+        "reference_summary": "Slovnaft, InoBat a ZSE podpísali memorandum o spoločnom projekte výroby batérií pri Seredi s cieľom rozbehnúť pilotnú linku do roku 2027. Využiť chcú európske financie a zapojiť slovenských dodávateľov surovín, aby vytvorili nový priemyselný ekosystém. Minister hospodárstva Dovhun plán víta, odbory však zdôrazňujú potrebu rekvalifikácie pracovníkov z automobilového sektora.",
+        "metrics": {
+          "bleu": 0.09756398763798114,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.27419354838709675,
+              "recall": 0.6181818181818182,
+              "f1": 0.37988826815642457
+            },
+            "rouge-2": {
+              "precision": 0.12195121951219512,
+              "recall": 0.2777777777777778,
+              "f1": 0.16949152542372883
+            },
+            "rouge-l": {
+              "precision": 0.20161290322580644,
+              "recall": 0.45454545454545453,
+              "f1": 0.27932960893854747
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1428,
+          "completion_tokens": 526,
+          "total_tokens": 1954,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "api_duration_seconds": 9.008222000033129
+        },
+        "wall_time_seconds": 9.0083755000378,
+        "meta": {
+          "source": "pravda.sk",
+          "url": "https://www.pravda.sk/"
+        }
+      }
+    ]
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "aggregate_metrics": {
+      "mean_bleu": 0.061190235318125334,
+      "mean_rouge_f1": {
+        "rouge-1": 0.3298585624450025,
+        "rouge-2": 0.11839211680586433,
+        "rouge-l": 0.2501820731297262
+      }
+    },
+    "aggregate_usage": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "prompt_tokens": 4130,
+      "completion_tokens": 1325,
+      "total_tokens": 5455,
+      "api_duration_seconds": 48.2113418339286,
+      "calls": 6,
+      "wall_time_seconds": 48.21169862500392
+    },
+    "samples": [
+      {
+        "article_id": "dennikn-2024-05-18",
+        "summary": "Bratislavské mestské zastupiteľstvo schválilo klimatický plán do roku 2030, ktorý zahŕňa rozšírenie električkových tratí do Ružinova a Nového Mesta, modernizáciu trolejbusovej siete a nákup ďalších elektrických autobusov. Plán tiež obsahuje opatrenia na adaptáciu na horúčavy, vrátane výsadby desaťtisíc nových stromov a rozšírenia vodných prvkov v centrálnych zónach. Primátor Matúš Vallo zdôraznil dôležitosť pripraviť sa na častejšie suchá a extrémne teploty. Opatrenia podporili všetky kluby okrem opozičného, ktorý žiadal vyššie dotácie pre parkovanie. Záver: Bratislava prijala klimatický plán do roku 2030. Úvod: Mesto chce znížiť emisie, posilniť verejnú dopravu a prispôsobiť sa vyšším teplotám.",
+        "reference_summary": "Bratislavskí poslanci schválili klimatický plán do roku 2030, ktorý počíta s rozšírením električiek, modernizáciou vozidiel MHD a masívnym sadením stromov. Mesto chce zároveň budovať vodné prvky a tienisté miesta, aby sa pripravilo na horúcejšie počasie. Primátor Vallo označil investície do zelene a hospodárenia s vodou za nevyhnutné, hoci opozícia volala po väčšej podpore parkovania.",
+        "metrics": {
+          "bleu": 0.07533406007809686,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.22641509433962265,
+              "recall": 0.39344262295081966,
+              "f1": 0.28742514970059885
+            },
+            "rouge-2": {
+              "precision": 0.0761904761904762,
+              "recall": 0.13333333333333333,
+              "f1": 0.09696969696969697
+            },
+            "rouge-l": {
+              "precision": 0.16037735849056603,
+              "recall": 0.2786885245901639,
+              "f1": 0.20359281437125748
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1375,
+          "completion_tokens": 417,
+          "total_tokens": 1792,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4o",
+          "api_duration_seconds": 32.532341167039704
+        },
+        "wall_time_seconds": 32.53250258299522,
+        "meta": {
+          "source": "dennikn.sk",
+          "url": "https://dennikn.sk/"
+        }
+      },
+      {
+        "article_id": "sme-2024-04-09",
+        "summary": "Ministerstvo zdravotníctva oznámilo zvýšenie financovania pediatrických pohotovostí o 12 miliónov eur, aby stabilizovalo služby v regiónoch ohrozených zatváraním ambulancií. Okrem toho pripraví motivačné balíčky pre mladých lekárov, aby pracovali na detských oddeleniach v menších nemocniciach. Asociácia nemocníc rozhodnutie privítala, no zdôraznila potrebu dlhodobých riešení ako lepšie plánovanie smien a digitalizácia. Minister Michal Palkovič avizoval, že v lete budú predstavené legislatívne zmeny na zjednodušenie administratívy a flexibilnejšie rozvrhnutie služieb. Záver: Nemocnice dostanú podporu pre pediatrické pohotovosti. Úvod: Ministerstvo zdravotníctva reaguje na nedostatok lekárov a prísnejšie pravidlá úväzkov.",
+        "reference_summary": "Rezort zdravotníctva prisľúbil 12 miliónov eur navyše na pediatrické pohotovosti, aby stabilizoval služby po zavedení prísnejších pravidiel pre služby lekárov. Nemocnice to vnímajú pozitívne, ale apelujú na dlhodobé opatrenia vrátane digitalizácie a lepšieho plánovania personálu. Minister Palkovič zároveň pripravuje legislatívne úpravy na leto, ktoré majú znížiť administratívu a uľahčiť organizáciu služieb.",
+        "metrics": {
+          "bleu": 0.00020596004955242717,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.2653061224489796,
+              "recall": 0.45614035087719296,
+              "f1": 0.33548387096774196
+            },
+            "rouge-2": {
+              "precision": 0.061855670103092786,
+              "recall": 0.10714285714285714,
+              "f1": 0.0784313725490196
+            },
+            "rouge-l": {
+              "precision": 0.20408163265306123,
+              "recall": 0.3508771929824561,
+              "f1": 0.25806451612903225
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1369,
+          "completion_tokens": 431,
+          "total_tokens": 1800,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4o",
+          "api_duration_seconds": 7.297583082981873
+        },
+        "wall_time_seconds": 7.297704374999739,
+        "meta": {
+          "source": "sme.sk",
+          "url": "https://www.sme.sk/"
+        }
+      },
+      {
+        "article_id": "pravda-2024-03-27",
+        "summary": "Energetické spoločnosti Slovnaft, InoBat a ZSE podpísali memorandum o spolupráci na vývoji a výrobe batériových článkov pre elektromobily, pričom projekt má byť realizovaný v priemyselnom parku pri Seredi s plánovaným spustením pilotnej linky do roku 2027. Financovanie projektu má byť zabezpečené z európskeho fondu IPCEI a firmy plánujú prilákať domácich dodávateľov hliníka a chemických zložiek. Minister hospodárstva Peter Dovhun podporil memorandum a upozornil na riziko straty pracovných miest, ak Slovensko nezachytí trend batériového priemyslu. Odbory žiadajú, aby projekt zahŕňal rekvalifikáciu pracovníkov z automobiliek, na ktorých môže mať prechod na elektromobilitu najväčší vplyv. Záver: Slovenské firmy sa spájajú pri výrobe batérií. Úvod: Energetické podniky chcú využiť európske fondy a vytvoriť nový dodávateľský reťazec.",
+        "reference_summary": "Slovnaft, InoBat a ZSE podpísali memorandum o spoločnom projekte výroby batérií pri Seredi s cieľom rozbehnúť pilotnú linku do roku 2027. Využiť chcú európske financie a zapojiť slovenských dodávateľov surovín, aby vytvorili nový priemyselný ekosystém. Minister hospodárstva Dovhun plán víta, odbory však zdôrazňujú potrebu rekvalifikácie pracovníkov z automobilového sektora.",
+        "metrics": {
+          "bleu": 0.10803068582672672,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.264,
+              "recall": 0.6,
+              "f1": 0.3666666666666667
+            },
+            "rouge-2": {
+              "precision": 0.12903225806451613,
+              "recall": 0.2962962962962963,
+              "f1": 0.1797752808988764
+            },
+            "rouge-l": {
+              "precision": 0.208,
+              "recall": 0.4727272727272727,
+              "f1": 0.28888888888888886
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1386,
+          "completion_tokens": 477,
+          "total_tokens": 1863,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4o",
+          "api_duration_seconds": 8.381417583907023
+        },
+        "wall_time_seconds": 8.381491667008959,
+        "meta": {
+          "source": "pravda.sk",
+          "url": "https://www.pravda.sk/"
+        }
+      }
+    ]
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-4.1",
+    "aggregate_metrics": {
+      "mean_bleu": 0.06457532026720982,
+      "mean_rouge_f1": {
+        "rouge-1": 0.3600854151499848,
+        "rouge-2": 0.12997765714334258,
+        "rouge-l": 0.2585743081197955
+      }
+    },
+    "aggregate_usage": {
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "prompt_tokens": 4164,
+      "completion_tokens": 1371,
+      "total_tokens": 5535,
+      "api_duration_seconds": 27.839274292986374,
+      "calls": 6,
+      "wall_time_seconds": 27.839548374991864
+    },
+    "samples": [
+      {
+        "article_id": "dennikn-2024-05-18",
+        "summary": "Bratislavské mestské zastupiteľstvo schválilo klimatický plán do roku 2030, ktorý vznikal niekoľko mesiacov. Plán zahŕňa rozšírenie električkových tratí do Ružinova a Nového Mesta, modernizáciu trolejbusovej siete a nákup ďalších elektrických autobusov. Súčasťou opatrení je aj výsadba desaťtisíc nových stromov, rozšírenie vodných prvkov v centrálnych zónach a tienených miest pri školách. Primátor Matúš Vallo poukázal na potrebu pripraviť sa na častejšie suchá a extrémne teploty, pričom všetky kluby okrem opozičného návrh podporili. Záver: Bratislava prijala klimatický plán do roku 2030. Úvod: Mesto chce znížiť emisie, posilniť verejnú dopravu a prispôsobiť sa vyšším teplotám.",
+        "reference_summary": "Bratislavskí poslanci schválili klimatický plán do roku 2030, ktorý počíta s rozšírením električiek, modernizáciou vozidiel MHD a masívnym sadením stromov. Mesto chce zároveň budovať vodné prvky a tienisté miesta, aby sa pripravilo na horúcejšie počasie. Primátor Vallo označil investície do zelene a hospodárenia s vodou za nevyhnutné, hoci opozícia volala po väčšej podpore parkovania.",
+        "metrics": {
+          "bleu": 0.07606200993630209,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.22857142857142856,
+              "recall": 0.39344262295081966,
+              "f1": 0.28915662650602414
+            },
+            "rouge-2": {
+              "precision": 0.07692307692307693,
+              "recall": 0.13333333333333333,
+              "f1": 0.0975609756097561
+            },
+            "rouge-l": {
+              "precision": 0.1619047619047619,
+              "recall": 0.2786885245901639,
+              "f1": 0.20481927710843376
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1417,
+          "completion_tokens": 455,
+          "total_tokens": 1872,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4.1",
+          "api_duration_seconds": 7.876149041985627
+        },
+        "wall_time_seconds": 7.876214083982632,
+        "meta": {
+          "source": "dennikn.sk",
+          "url": "https://dennikn.sk/"
+        }
+      },
+      {
+        "article_id": "sme-2024-04-09",
+        "summary": "Ministerstvo zdravotníctva oznámilo, že tento rok navýši rozpočet na pediatrické pohotovosti o 12 miliónov eur, aby stabilizovalo služby v regiónoch ohrozených zatváraním ambulancií kvôli novým pravidlám. Štát chystá aj motivačné balíčky pre mladých lekárov, aby prijímali pozície na detských oddeleniach v menších nemocniciach. Asociácia nemocníc tento krok privítala, no vyzýva na trvalejšie systémové riešenia vrátane lepšieho plánovania smien a väčšej digitalizácie. Minister Michal Palkovič informoval, že v lete budú predstavené ďalšie legislatívne zmeny na zjednodušenie administratívy a flexibilitu služieb. Záver: Nemocnice dostanú podporu pre pediatrické pohotovosti. Úvod: Ministerstvo zdravotníctva reaguje na nedostatok lekárov a prísnejšie pravidlá úväzkov.",
+        "reference_summary": "Rezort zdravotníctva prisľúbil 12 miliónov eur navyše na pediatrické pohotovosti, aby stabilizoval služby po zavedení prísnejších pravidiel pre služby lekárov. Nemocnice to vnímajú pozitívne, ale apelujú na dlhodobé opatrenia vrátane digitalizácie a lepšieho plánovania personálu. Minister Palkovič zároveň pripravuje legislatívne úpravy na leto, ktoré majú znížiť administratívu a uľahčiť organizáciu služieb.",
+        "metrics": {
+          "bleu": 0.00024260716916558463,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.2727272727272727,
+              "recall": 0.5263157894736842,
+              "f1": 0.35928143712574845
+            },
+            "rouge-2": {
+              "precision": 0.07339449541284404,
+              "recall": 0.14285714285714285,
+              "f1": 0.09696969696969697
+            },
+            "rouge-l": {
+              "precision": 0.20909090909090908,
+              "recall": 0.40350877192982454,
+              "f1": 0.2754491017964072
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1376,
+          "completion_tokens": 462,
+          "total_tokens": 1838,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4.1",
+          "api_duration_seconds": 6.345965833985247
+        },
+        "wall_time_seconds": 6.346092457999475,
+        "meta": {
+          "source": "sme.sk",
+          "url": "https://www.sme.sk/"
+        }
+      },
+      {
+        "article_id": "pravda-2024-03-27",
+        "summary": "Spoločnosti Slovnaft, InoBat a ZSE podpísali memorandum o spolupráci na vývoji a výrobe batériových článkov pre elektromobily. V priemyselnom parku pri Seredi plánujú do roku 2027 spustiť pilotnú linku na recykláciu a skladovanie batérií, pričom ráta sa s investíciami z európskeho fondu IPCEI a zapojením domácich dodávateľov hliníka a chemických zložiek. Minister hospodárstva Peter Dovhun memorandum podporil, keďže podľa neho by zaostávanie Slovenska v batériovom priemysle mohlo viesť k strate pracovných miest. Odbory požadujú, aby projekt obsahoval aj plán na rekvalifikáciu pracovníkov z automobilového sektora dotknutého prechodom na elektromobilitu. Záver: Slovenské firmy sa spájajú pri výrobe batérií. Úvod: Energetické podniky chcú využiť európske fondy a vytvoriť nový dodávateľský reťazec.",
+        "reference_summary": "Slovnaft, InoBat a ZSE podpísali memorandum o spoločnom projekte výroby batérií pri Seredi s cieľom rozbehnúť pilotnú linku do roku 2027. Využiť chcú európske financie a zapojiť slovenských dodávateľov surovín, aby vytvorili nový priemyselný ekosystém. Minister hospodárstva Dovhun plán víta, odbory však zdôrazňujú potrebu rekvalifikácie pracovníkov z automobilového sektora.",
+        "metrics": {
+          "bleu": 0.11742134369616176,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.3140495867768595,
+              "recall": 0.6909090909090909,
+              "f1": 0.4318181818181818
+            },
+            "rouge-2": {
+              "precision": 0.14166666666666666,
+              "recall": 0.3148148148148148,
+              "f1": 0.1954022988505747
+            },
+            "rouge-l": {
+              "precision": 0.21487603305785125,
+              "recall": 0.4727272727272727,
+              "f1": 0.29545454545454547
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1371,
+          "completion_tokens": 454,
+          "total_tokens": 1825,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-4.1",
+          "api_duration_seconds": 13.6171594170155
+        },
+        "wall_time_seconds": 13.617241833009757,
+        "meta": {
+          "source": "pravda.sk",
+          "url": "https://www.pravda.sk/"
+        }
+      }
+    ]
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-5",
+    "aggregate_metrics": {
+      "mean_bleu": 0.06426376905905955,
+      "mean_rouge_f1": {
+        "rouge-1": 0.3911211359972273,
+        "rouge-2": 0.14078853046594983,
+        "rouge-l": 0.2826247132328752
+      }
+    },
+    "aggregate_usage": {
+      "provider": "openai",
+      "model": "gpt-5",
+      "prompt_tokens": 4179,
+      "completion_tokens": 8360,
+      "total_tokens": 12539,
+      "api_duration_seconds": 116.28973624989158,
+      "calls": 6,
+      "wall_time_seconds": 116.29029454098782
+    },
+    "samples": [
+      {
+        "article_id": "dennikn-2024-05-18",
+        "summary": "Bratislavské mestské zastupiteľstvo po niekoľkých mesiacoch príprav schválilo klimatický plán do roku 2030, ktorý počíta s rozšírením električkových tratí do Ružinova a Nového Mesta, modernizáciou trolejbusovej siete a nákupom ďalších elektrických autobusov. V rámci adaptácie na horúčavy mesto plánuje vysadiť 10 000 nových stromov, rozšíriť vodné prvky v centrálnych zónach a vytvoriť tienené priestranstvá pri školách; primátor Matúš Vallo zdôraznil potrebu pripraviť Bratislavu na častejšie suchá a extrémne teploty a označil investície do zelene a vodného hospodárstva za kľúčové, pričom opatrenia podporili všetky kluby s výnimkou opozičného, ktorý žiadal vyššie dotácie pre parkovanie. Záver: Bratislava prijala klimatický plán do roku 2030. Úvod: Mesto chce znížiť emisie, posilniť verejnú dopravu a prispôsobiť sa vyšším teplotám.",
+        "reference_summary": "Bratislavskí poslanci schválili klimatický plán do roku 2030, ktorý počíta s rozšírením električiek, modernizáciou vozidiel MHD a masívnym sadením stromov. Mesto chce zároveň budovať vodné prvky a tienisté miesta, aby sa pripravilo na horúcejšie počasie. Primátor Vallo označil investície do zelene a hospodárenia s vodou za nevyhnutné, hoci opozícia volala po väčšej podpore parkovania.",
+        "metrics": {
+          "bleu": 0.12313681849661803,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.28346456692913385,
+              "recall": 0.5901639344262295,
+              "f1": 0.3829787234042553
+            },
+            "rouge-2": {
+              "precision": 0.12698412698412698,
+              "recall": 0.26666666666666666,
+              "f1": 0.17204301075268816
+            },
+            "rouge-l": {
+              "precision": 0.2204724409448819,
+              "recall": 0.45901639344262296,
+              "f1": 0.2978723404255319
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1413,
+          "completion_tokens": 2767,
+          "total_tokens": 4180,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-5",
+          "api_duration_seconds": 36.64335512393154
+        },
+        "wall_time_seconds": 36.643419082975015,
+        "meta": {
+          "source": "dennikn.sk",
+          "url": "https://dennikn.sk/"
+        }
+      },
+      {
+        "article_id": "sme-2024-04-09",
+        "summary": "Ministerstvo zdravotníctva oznámilo navýšenie financovania pediatrických pohotovostí o 12 miliónov eur v tomto roku, aby stabilizovalo služby v regiónoch ohrozených zatváraním pre nové limity služieb. Štát pripraví motivačné balíčky pre mladých lekárov na nástup na detské oddelenia v menších nemocniciach. Asociácia nemocníc krok privítala, no zdôraznila potrebu dlhodobých opatrení vrátane lepšieho plánovania smien a širšej digitalizácie, pričom minister Michal Palkovič avizoval na leto legislatívne zmeny na zjednodušenie administratívy a flexibilnejšie rozvrhnutie služieb. Záver: Nemocnice dostanú podporu pre pediatrické pohotovosti. Úvod: Ministerstvo zdravotníctva reaguje na nedostatok lekárov a prísnejšie pravidlá úväzkov.",
+        "reference_summary": "Rezort zdravotníctva prisľúbil 12 miliónov eur navyše na pediatrické pohotovosti, aby stabilizoval služby po zavedení prísnejších pravidiel pre služby lekárov. Nemocnice to vnímajú pozitívne, ale apelujú na dlhodobé opatrenia vrátane digitalizácie a lepšieho plánovania personálu. Minister Palkovič zároveň pripravuje legislatívne úpravy na leto, ktoré majú znížiť administratívu a uľahčiť organizáciu služieb.",
+        "metrics": {
+          "bleu": 0.00021913244398474939,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.31,
+              "recall": 0.543859649122807,
+              "f1": 0.39490445859872614
+            },
+            "rouge-2": {
+              "precision": 0.0707070707070707,
+              "recall": 0.125,
+              "f1": 0.09032258064516129
+            },
+            "rouge-l": {
+              "precision": 0.21,
+              "recall": 0.3684210526315789,
+              "f1": 0.267515923566879
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1381,
+          "completion_tokens": 3232,
+          "total_tokens": 4613,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-5",
+          "api_duration_seconds": 50.27094970899634
+        },
+        "wall_time_seconds": 50.27111829200294,
+        "meta": {
+          "source": "sme.sk",
+          "url": "https://www.sme.sk/"
+        }
+      },
+      {
+        "article_id": "pravda-2024-03-27",
+        "summary": "Energetické spoločnosti Slovnaft, InoBat a ZSE oznámili memorandum o spolupráci na vývoji a výrobe batériových článkov pre elektromobily na Slovensku. Projekt má vzniknúť v priemyselnom parku pri Seredi, s cieľom do roku 2027 spustiť pilotnú linku na recykláciu a skladovanie batérií, pričom firmy rátajú s investíciami z európskeho fondu IPCEI a so zapojením domácich dodávateľov hliníka a chemických zložiek. Minister hospodárstva Peter Dovhun iniciatívu podporil a varoval, že nezachytenie trendu batériového priemyslu by znamenalo stratu tisícov pracovných miest, zatiaľ čo odbory žiadajú, aby projekt zahŕňal rekvalifikáciu pracovníkov z automobiliek. Záver: Slovenské firmy sa spájajú pri výrobe batérií. Úvod: Energetické podniky chcú využiť európske fondy a vytvoriť nový dodávateľský reťazec.",
+        "reference_summary": "Slovnaft, InoBat a ZSE podpísali memorandum o spoločnom projekte výroby batérií pri Seredi s cieľom rozbehnúť pilotnú linku do roku 2027. Využiť chcú európske financie a zapojiť slovenských dodávateľov surovín, aby vytvorili nový priemyselný ekosystém. Minister hospodárstva Dovhun plán víta, odbory však zdôrazňujú potrebu rekvalifikácie pracovníkov z automobilového sektora.",
+        "metrics": {
+          "bleu": 0.06943535623657586,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.28688524590163933,
+              "recall": 0.6363636363636364,
+              "f1": 0.39548022598870053
+            },
+            "rouge-2": {
+              "precision": 0.11570247933884298,
+              "recall": 0.25925925925925924,
+              "f1": 0.16
+            },
+            "rouge-l": {
+              "precision": 0.20491803278688525,
+              "recall": 0.45454545454545453,
+              "f1": 0.2824858757062147
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1385,
+          "completion_tokens": 2361,
+          "total_tokens": 3746,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-5",
+          "api_duration_seconds": 29.375431416963693
+        },
+        "wall_time_seconds": 29.375757166009862,
+        "meta": {
+          "source": "pravda.sk",
+          "url": "https://www.pravda.sk/"
+        }
+      }
+    ]
+  },
+  {
+    "provider": "openai",
+    "model": "gpt-5-mini",
+    "aggregate_metrics": {
+      "mean_bleu": 0.04205955554956009,
+      "mean_rouge_f1": {
+        "rouge-1": 0.3456322484100262,
+        "rouge-2": 0.09813218390804597,
+        "rouge-l": 0.2252618780396558
+      }
+    },
+    "aggregate_usage": {
+      "provider": "openai",
+      "model": "gpt-5-mini",
+      "prompt_tokens": 4173,
+      "completion_tokens": 6725,
+      "total_tokens": 10898,
+      "api_duration_seconds": 97.98841283202637,
+      "calls": 6,
+      "wall_time_seconds": 97.98877508396981
+    },
+    "samples": [
+      {
+        "article_id": "dennikn-2024-05-18",
+        "summary": "Bratislavské mestské zastupiteľstvo po niekoľkých mesiacoch príprav schválilo klimatický plán do roku 2030. Plán zahŕňa rozšírenie električkových tratí do Ružinova a Nového Mesta, modernizáciu trolejbusovej siete a nákup ďalších elektrických autobusov. Ako súčasť adaptácie na horúčavy mesto plánuje vysadiť desaťtisíc nových stromov, rozšíriť vodné prvky v centrálnych zónach a vytvoriť tienené priestranstvá pri školách; opatrenia podporili všetky poslanecké kluby s výnimkou opozičného, ktorý žiadal vyššie dotácie pre parkovanie. Záver: Bratislava prijala klimatický plán do roku 2030. Úvod: Mesto chce znížiť emisie, posilniť verejnú dopravu a prispôsobiť sa vyšším teplotám.",
+        "reference_summary": "Bratislavskí poslanci schválili klimatický plán do roku 2030, ktorý počíta s rozšírením električiek, modernizáciou vozidiel MHD a masívnym sadením stromov. Mesto chce zároveň budovať vodné prvky a tienisté miesta, aby sa pripravilo na horúcejšie počasie. Primátor Vallo označil investície do zelene a hospodárenia s vodou za nevyhnutné, hoci opozícia volala po väčšej podpore parkovania.",
+        "metrics": {
+          "bleu": 0.05777766662234261,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.25742574257425743,
+              "recall": 0.4262295081967213,
+              "f1": 0.32098765432098764
+            },
+            "rouge-2": {
+              "precision": 0.07,
+              "recall": 0.11666666666666667,
+              "f1": 0.08750000000000001
+            },
+            "rouge-l": {
+              "precision": 0.16831683168316833,
+              "recall": 0.2786885245901639,
+              "f1": 0.20987654320987653
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1419,
+          "completion_tokens": 1826,
+          "total_tokens": 3245,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-5-mini",
+          "api_duration_seconds": 26.314632291032467
+        },
+        "wall_time_seconds": 26.31474616698688,
+        "meta": {
+          "source": "dennikn.sk",
+          "url": "https://dennikn.sk/"
+        }
+      },
+      {
+        "article_id": "sme-2024-04-09",
+        "summary": "Ministerstvo zdravotníctva oznámilo, že tento rok navýši financovanie pediatrických pohotovostí o 12 miliónov eur. Cieľom navýšenia je stabilizovať služby v regiónoch, kde pre nové pravidlá o maximálnom počte služieb hrozilo zatváranie ambulancií, a rezort zároveň pripraví motivačné balíčky pre mladých lekárov, aby nastupovali na detské oddelenia v menších nemocniciach. Asociácia nemocníc rozhodnutie privítala, no upozornila, že systém potrebuje dlhodobé riešenia ako lepšie plánovanie smien a širšia digitalizácia, a minister Michal Palkovič avizoval, že v lete budú predstavené legislatívne zmeny na zjednodušenie administratívy a flexibilnejšie rozvrhnutie služieb. Záver: Nemocnice dostanú podporu pre pediatrické pohotovosti. Úvod: Ministerstvo zdravotníctva reaguje na nedostatok lekárov a prísnejšie pravidlá úväzkov.",
+        "reference_summary": "Rezort zdravotníctva prisľúbil 12 miliónov eur navyše na pediatrické pohotovosti, aby stabilizoval služby po zavedení prísnejších pravidiel pre služby lekárov. Nemocnice to vnímajú pozitívne, ale apelujú na dlhodobé opatrenia vrátane digitalizácie a lepšieho plánovania personálu. Minister Palkovič zároveň pripravuje legislatívne úpravy na leto, ktoré majú znížiť administratívu a uľahčiť organizáciu služieb.",
+        "metrics": {
+          "bleu": 0.0001660824702565958,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.24369747899159663,
+              "recall": 0.5087719298245614,
+              "f1": 0.32954545454545453
+            },
+            "rouge-2": {
+              "precision": 0.0423728813559322,
+              "recall": 0.08928571428571429,
+              "f1": 0.057471264367816084
+            },
+            "rouge-l": {
+              "precision": 0.15126050420168066,
+              "recall": 0.3157894736842105,
+              "f1": 0.2045454545454545
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1372,
+          "completion_tokens": 2291,
+          "total_tokens": 3663,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-5-mini",
+          "api_duration_seconds": 33.69936833297834
+        },
+        "wall_time_seconds": 33.69954687496647,
+        "meta": {
+          "source": "sme.sk",
+          "url": "https://www.sme.sk/"
+        }
+      },
+      {
+        "article_id": "pravda-2024-03-27",
+        "summary": "Spoločnosti Slovnaft, InoBat a ZSE oznámili memorandum o spolupráci pri vývoji a výrobe batériových článkov pre elektromobily a plánujú zriadiť projekt v priemyselnom parku pri Seredi. V rámci projektu chcú do roku 2027 spustiť pilotnú linku na recykláciu a skladovanie batérií a rátajú s investíciami z európskeho fondu IPCEI, pričom plánujú pritiahnuť domácich dodávateľov hliníka a chemických zložiek. Minister hospodárstva Peter Dovhun memorandum podporil a varoval, že ak Slovensko nezachytí trend batériového priemyslu, môže prísť o tisíce pracovných miest; odbory požadujú, aby projekt zahŕňal rekvalifikáciu pracovníkov z automobiliek. Záver: Slovenské firmy sa spájajú pri výrobe batérií. Úvod: Energetické podniky chcú využiť európske fondy a vytvoriť nový dodávateľský reťazec.",
+        "reference_summary": "Slovnaft, InoBat a ZSE podpísali memorandum o spoločnom projekte výroby batérií pri Seredi s cieľom rozbehnúť pilotnú linku do roku 2027. Využiť chcú európske financie a zapojiť slovenských dodávateľov surovín, aby vytvorili nový priemyselný ekosystém. Minister hospodárstva Dovhun plán víta, odbory však zdôrazňujú potrebu rekvalifikácie pracovníkov z automobilového sektora.",
+        "metrics": {
+          "bleu": 0.06823491755608105,
+          "rouge": {
+            "rouge-1": {
+              "precision": 0.2809917355371901,
+              "recall": 0.6181818181818182,
+              "f1": 0.3863636363636364
+            },
+            "rouge-2": {
+              "precision": 0.10833333333333334,
+              "recall": 0.24074074074074073,
+              "f1": 0.14942528735632182
+            },
+            "rouge-l": {
+              "precision": 0.19008264462809918,
+              "recall": 0.41818181818181815,
+              "f1": 0.26136363636363635
+            }
+          }
+        },
+        "usage": {
+          "prompt_tokens": 1382,
+          "completion_tokens": 2608,
+          "total_tokens": 3990,
+          "calls": 2,
+          "provider": "openai",
+          "model": "gpt-5-mini",
+          "api_duration_seconds": 37.974412208015565
+        },
+        "wall_time_seconds": 37.97448204201646,
+        "meta": {
+          "source": "pravda.sk",
+          "url": "https://www.pravda.sk/"
+        }
+      }
+    ]
+  }
+]

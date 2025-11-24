@@ -1,0 +1,245 @@
+{
+  "summary_generated_at": "2025-11-20T14:15:06.984119",
+  "dataset_size": 1,
+  "models_tested": [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-5.1",
+    "gemini-2.0-flash",
+    "gemini-2.5-flash"
+  ],
+  "approaches_tested": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "best_combination": {
+    "model": "gpt-4o-mini",
+    "approach": "1_basic",
+    "num_samples": 1,
+    "mean_bleu": 0.2209,
+    "mean_rouge_1": 0.589,
+    "mean_rouge_l": 0.4417,
+    "mean_bert_precision": 0.7703,
+    "mean_bert_recall": 0.7951,
+    "mean_bert_f1": 0.7825,
+    "mean_input_tokens": 293.0,
+    "mean_output_tokens": 150.0,
+    "mean_total_tokens": 443.0,
+    "mean_total_latency_s": 3.79,
+    "performance_score": 7.4,
+    "efficiency_score": 0.9478,
+    "mean_rouge_avg": 0.5153
+  },
+  "approach_results": {
+    "1_basic": [
+      {
+        "model": "gemini-2.0-flash",
+        "mean_bleu": 0.0907,
+        "mean_rouge_1": 0.4706,
+        "mean_rouge_l": 0.2876,
+        "mean_bert_f1": 0.751,
+        "mean_total_tokens": 400.0,
+        "mean_total_latency_s": 1.55,
+        "performance_score": 7.04
+      },
+      {
+        "model": "gemini-2.5-flash",
+        "mean_bleu": 0.18,
+        "mean_rouge_1": 0.5926,
+        "mean_rouge_l": 0.3951,
+        "mean_bert_f1": 0.7651,
+        "mean_total_tokens": 1636.0,
+        "mean_total_latency_s": 8.25,
+        "performance_score": 6.9
+      },
+      {
+        "model": "gpt-4o",
+        "mean_bleu": 0.1508,
+        "mean_rouge_1": 0.5604,
+        "mean_rouge_l": 0.4066,
+        "mean_bert_f1": 0.776,
+        "mean_total_tokens": 478.0,
+        "mean_total_latency_s": 4.53,
+        "performance_score": 7.24
+      },
+      {
+        "model": "gpt-4o-mini",
+        "mean_bleu": 0.2209,
+        "mean_rouge_1": 0.589,
+        "mean_rouge_l": 0.4417,
+        "mean_bert_f1": 0.7825,
+        "mean_total_tokens": 443.0,
+        "mean_total_latency_s": 3.79,
+        "performance_score": 7.4
+      },
+      {
+        "model": "gpt-5.1",
+        "mean_bleu": 0.1511,
+        "mean_rouge_1": 0.5765,
+        "mean_rouge_l": 0.4353,
+        "mean_bert_f1": 0.7761,
+        "mean_total_tokens": 462.0,
+        "mean_total_latency_s": 2.76,
+        "performance_score": 7.32
+      }
+    ],
+    "2_enhanced": [
+      {
+        "model": "gemini-2.0-flash",
+        "mean_bleu": 0.0585,
+        "mean_rouge_1": 0.4639,
+        "mean_rouge_l": 0.299,
+        "mean_bert_f1": 0.747,
+        "mean_total_tokens": 703.0,
+        "mean_total_latency_s": 2.17,
+        "performance_score": 6.94
+      },
+      {
+        "model": "gemini-2.5-flash",
+        "mean_bleu": 0.198,
+        "mean_rouge_1": 0.5567,
+        "mean_rouge_l": 0.4227,
+        "mean_bert_f1": 0.7672,
+        "mean_total_tokens": 2163.0,
+        "mean_total_latency_s": 12.51,
+        "performance_score": 6.74
+      },
+      {
+        "model": "gpt-4o",
+        "mean_bleu": 0.1653,
+        "mean_rouge_1": 0.555,
+        "mean_rouge_l": 0.377,
+        "mean_bert_f1": 0.7616,
+        "mean_total_tokens": 734.0,
+        "mean_total_latency_s": 5.62,
+        "performance_score": 7.06
+      },
+      {
+        "model": "gpt-4o-mini",
+        "mean_bleu": 0.2251,
+        "mean_rouge_1": 0.5503,
+        "mean_rouge_l": 0.4021,
+        "mean_bert_f1": 0.7734,
+        "mean_total_tokens": 726.0,
+        "mean_total_latency_s": 4.14,
+        "performance_score": 7.26
+      },
+      {
+        "model": "gpt-5.1",
+        "mean_bleu": 0.1632,
+        "mean_rouge_1": 0.5045,
+        "mean_rouge_l": 0.3604,
+        "mean_bert_f1": 0.7673,
+        "mean_total_tokens": 790.0,
+        "mean_total_latency_s": 3.67,
+        "performance_score": 7.14
+      }
+    ],
+    "3_multistep": [
+      {
+        "model": "gemini-2.0-flash",
+        "mean_bleu": 0.1691,
+        "mean_rouge_1": 0.5475,
+        "mean_rouge_l": 0.3911,
+        "mean_bert_f1": 0.7798,
+        "mean_total_tokens": 1322.0,
+        "mean_total_latency_s": 3.12,
+        "performance_score": 7.2
+      },
+      {
+        "model": "gemini-2.5-flash",
+        "mean_bleu": 0.1673,
+        "mean_rouge_1": 0.5116,
+        "mean_rouge_l": 0.3721,
+        "mean_bert_f1": 0.7687,
+        "mean_total_tokens": 4926.0,
+        "mean_total_latency_s": 19.87,
+        "performance_score": 6.08
+      },
+      {
+        "model": "gpt-4o",
+        "mean_bleu": 0.1515,
+        "mean_rouge_1": 0.5366,
+        "mean_rouge_l": 0.4,
+        "mean_bert_f1": 0.7724,
+        "mean_total_tokens": 1473.0,
+        "mean_total_latency_s": 8.87,
+        "performance_score": 6.94
+      },
+      {
+        "model": "gpt-4o-mini",
+        "mean_bleu": 0.1459,
+        "mean_rouge_1": 0.4873,
+        "mean_rouge_l": 0.3046,
+        "mean_bert_f1": 0.7353,
+        "mean_total_tokens": 1481.0,
+        "mean_total_latency_s": 9.34,
+        "performance_score": 6.59
+      },
+      {
+        "model": "gpt-5.1",
+        "mean_bleu": 0.0989,
+        "mean_rouge_1": 0.397,
+        "mean_rouge_l": 0.2622,
+        "mean_bert_f1": 0.736,
+        "mean_total_tokens": 2144.0,
+        "mean_total_latency_s": 21.1,
+        "performance_score": 6.05
+      }
+    ],
+    "4_self_refine": [
+      {
+        "model": "gemini-2.0-flash",
+        "mean_bleu": 0.2364,
+        "mean_rouge_1": 0.5732,
+        "mean_rouge_l": 0.5244,
+        "mean_bert_f1": 0.7937,
+        "mean_total_tokens": 2118.0,
+        "mean_total_latency_s": 10.86,
+        "performance_score": 7.09
+      },
+      {
+        "model": "gemini-2.5-flash",
+        "mean_bleu": 0.1708,
+        "mean_rouge_1": 0.5556,
+        "mean_rouge_l": 0.4646,
+        "mean_bert_f1": 0.7734,
+        "mean_total_tokens": 5963.0,
+        "mean_total_latency_s": 24.7,
+        "performance_score": 5.89
+      },
+      {
+        "model": "gpt-4o",
+        "mean_bleu": 0.1221,
+        "mean_rouge_1": 0.5426,
+        "mean_rouge_l": 0.4043,
+        "mean_bert_f1": 0.7681,
+        "mean_total_tokens": 2293.0,
+        "mean_total_latency_s": 12.7,
+        "performance_score": 6.66
+      },
+      {
+        "model": "gpt-4o-mini",
+        "mean_bleu": 0.1077,
+        "mean_rouge_1": 0.4519,
+        "mean_rouge_l": 0.2692,
+        "mean_bert_f1": 0.739,
+        "mean_total_tokens": 2330.0,
+        "mean_total_latency_s": 13.41,
+        "performance_score": 6.31
+      },
+      {
+        "model": "gpt-5.1",
+        "mean_bleu": 0.1116,
+        "mean_rouge_1": 0.4228,
+        "mean_rouge_l": 0.3008,
+        "mean_bert_f1": 0.7413,
+        "mean_total_tokens": 3095.0,
+        "mean_total_latency_s": 17.77,
+        "performance_score": 6.11
+      }
+    ]
+  }
+}

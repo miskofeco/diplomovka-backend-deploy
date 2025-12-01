@@ -8,11 +8,24 @@ from typing import List
 
 from src.dataset import GOLD_STANDARD_DATASET
 from src.models import get_client
-from src.pipelines import BasicPipeline, EnhancedPipeline, MultiStepPipeline, SelfRefinePipeline
+from src.pipelines import (
+    BasicPipeline,
+    EnhancedPipeline,
+    MamRefinePipeline,
+    MultiStepPipeline,
+    SelfRefinePipeline,
+)
 from src.metrics import MetricsEngine
 
 # Load environment variables
 load_dotenv()
+
+MAM_REFINE_MODEL_CONFIG = {
+    "detectors": ["gpt-4o", "gemini-2.5-flash"],
+    "critique": ["gpt-4o", "gemini-2.5-flash"],
+    "refine": ["gpt-4o", "gemini-2.5-flash"],
+    "rerank": "gemini-2.5-flash",
+}
 
 
 def _safe_avg(values, precision=4):
@@ -53,7 +66,7 @@ async def run_experiment(models: list, approaches: list, dataset: list):
     async def _evaluate_pipeline(pipeline, article_id, topic, article, reference, model_name, approach_label):
         print(f"Spúšťam model {model_name} / prístup {approach_label} pre článok {article_id}...")
         try:
-            result = await pipeline.execute(article, reference)
+            result = await pipeline.execute(article, reference, topic)
         except Exception as e:
             print(f"!! Chyba pri {model_name} / prístup {approach_label}: {str(e)}")
             return None
@@ -120,6 +133,20 @@ async def run_experiment(models: list, approaches: list, dataset: list):
                 "3": MultiStepPipeline(client, metrics_engine),
                 "4": SelfRefinePipeline(client, judge_model, metrics_engine),
             }
+
+            if "5" in approaches:
+                mam_detectors = [get_client(name) for name in MAM_REFINE_MODEL_CONFIG["detectors"]]
+                mam_critiques = [get_client(name) for name in MAM_REFINE_MODEL_CONFIG["critique"]]
+                mam_refiners = [get_client(name) for name in MAM_REFINE_MODEL_CONFIG["refine"]]
+                mam_rerank = get_client(MAM_REFINE_MODEL_CONFIG["rerank"])
+                pipelines_map["5"] = MamRefinePipeline(
+                    baseline_model=client,
+                    detector_models=mam_detectors,
+                    critique_models=mam_critiques,
+                    refine_models=mam_refiners,
+                    rerank_model=mam_rerank,
+                    metrics_engine=metrics_engine,
+                )
 
             for approach_id in approaches:
                 if approach_id not in pipelines_map:
@@ -280,7 +307,7 @@ async def run_experiment(models: list, approaches: list, dataset: list):
 def main():
     parser = argparse.ArgumentParser(description="LLM Slovak Summarization Evaluator")
     parser.add_argument("--models", type=str, required=True, help="Comma-separated models (e.g. gpt-4o,gemini-1.5-flash)")
-    parser.add_argument("--approaches", type=str, default="1,2,3,4", help="Comma-separated approach IDs (1-4)")
+    parser.add_argument("--approaches", type=str, default="1,2,3,4", help="Comma-separated approach IDs (1-5)")
 
     args = parser.parse_args()
 
@@ -289,6 +316,7 @@ def main():
 
     # Ensure NLTK data
     import nltk
+    nltk.download('punkt_tab')
     try:
         nltk.data.find('tokenizers/punkt')
     except LookupError:

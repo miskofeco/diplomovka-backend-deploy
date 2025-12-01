@@ -75,3 +75,72 @@ class SlovakPrompts:
         "Uprav text tak, aby presne reflektoval pripomienky, zachoval číselné údaje a mená v rovnakom znení a nepridal neoverené informácie.\n"
         "Vylepšené zhrnutie:"
     )
+
+
+class MammRefinePrompts:
+    BASELINE_SYSTEM = "Si stručný sumarizátor. Pracuješ s minimálnymi pokynmi a nevymýšľaš fakty, ktoré nie sú v texte."
+    BASELINE_USER_WITH_TOPIC = (
+        "Zhrň nasledujúci dokument k téme: '{topic}'.\n\n"
+        "Dokument:\n{document}\n\n"
+        "Napíš krátke zhrnutie zamerané na danú tému. Nepridávaj externé informácie."
+    )
+    BASELINE_USER_NO_TOPIC = (
+        "Zhrň nasledujúci dokument do krátkeho odseku.\n"
+        "Nepridávaj externé informácie ani predpoklady.\n\n"
+        "Dokument:\n{document}"
+    )
+
+    DETECT_SYSTEM = "Si dôsledný kontrolór faktov, ktorý označí vety nepodložené dokumentom."
+    DETECT_USER = (
+        "Dokument:\n{document}\n\n"
+        "Veta na kontrolu:\n{sentence}\n\n"
+        "Urči, či je veta fakticky konzistentná s dokumentom vyššie.\n"
+        "Veta je konzistentná, ak ju dokument priamo uvádza alebo jednoznačne implikuje.\n\n"
+        "Odpovedz stručne do 50 slov a vráť platný JSON:\n"
+        '{"reasoning": "...", "answer": "yes" alebo "no"}\n'
+        "Nepridávaj žiadny text mimo JSON."
+    )
+
+    CRITIQUE_SYSTEM = "Identifikuješ faktické chyby a navrhuješ presné opravy."
+    CRITIQUE_USER = (
+        "Zhrnul som tento dokument{topic_clause}:\n\n"
+        "{document}\n\n"
+        "Zhrnutie:\n{summary}\n\n"
+        "Problémová veta:\n{sentence}\n\n"
+        "Vysvetli, ktorá časť vety alebo zhrnutia je fakticky nesprávna vzhľadom na dokument.\n"
+        'Uveď dôvody, vyznač chybný úsek ako "Chybný úsek: <text>" a zakonči návrhom úpravy zhrnutia.\n'
+        "Buď presný, neprepisuj celé zhrnutie, navrhni len nevyhnutnú zmenu."
+    )
+
+    CRITIQUE_RERANK_SYSTEM = "Porovnávaš dve kritiky a vyberáš tú presnejšiu a použiteľnejšiu."
+    CRITIQUE_RERANK_USER = (
+        "Vyber najlepšiu kritiku na zlepšenie faktickej správnosti.\n\n"
+        "Dokument:\n{document}\n\n"
+        "Zhrnutie:\n{summary}\n\n"
+        "Kritika 1:\n{critique1}\n\n"
+        "Kritika 2:\n{critique2}\n\n"
+        "Vyber kritiku, ktorá najlepšie identifikuje faktickú chybu a obsahuje presný návrh opravy.\n"
+        'Vráť platný JSON: {"reasoning": "...", "answer": 1 alebo 2}\n'
+        "Bez ďalšieho textu."
+    )
+
+    REFINE_SYSTEM = "Si opatrný editor. Robíš len minimálne úpravy na opravu faktických chýb."
+    REFINE_USER = (
+        "Zhrnul som nasledujúci dokument{topic_clause}:\n\n"
+        "{document}\n\n"
+        "Zhrnutie:\n{summary}\n\n"
+        "Spätná väzba na zhrnutie:\n{feedback}\n\n"
+        "Uprav zhrnutie tak, aby už neobsahovalo chyby uvedené v spätnej väzbe.\n"
+        "Urob minimum zmien a nepridávaj úvodné ani záverečné vety."
+    )
+
+    SUMMARY_RERANK_SYSTEM = "Vyberáš najvernejšie zhrnutie podľa dokumentu."
+    SUMMARY_RERANK_USER = (
+        "Dokument:\n{document}\n\n"
+        "Téma: {topic}\n\n"
+        "Kandidátne zhrnutie 1:\n{summary1}\n\n"
+        "Kandidátne zhrnutie 2:\n{summary2}\n\n"
+        "Vyber zhrnutie, ktoré má najmenej faktických nezrovnalostí s dokumentom.\n"
+        'Vráť platný JSON: {"reasoning": "...", "answer": 1 alebo 2}\n'
+        "Bez ďalšieho textu."
+    )

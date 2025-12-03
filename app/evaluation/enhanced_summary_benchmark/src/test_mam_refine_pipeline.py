@@ -16,6 +16,16 @@ class FakeLLM(LLMClient):
         super().__init__(model_name)
 
     async def generate(self, system_prompt: str, user_prompt: str, json_mode: bool = False) -> LLMResponse:
+        # Event extraction for baseline
+        if "UDALOSTI A TÉMY" in user_prompt or "hlavných udalostí" in user_prompt:
+            content = "- Modernizácia trate Žilina–Košice\n- Dokončenie úsekov v roku 2027\n- Zvýšenie rýchlosti na 160 km/h"
+            return LLMResponse(content=content, usage=TokenUsage(1, 1, 2), latency=0.01)
+
+        # Baseline from events
+        if "ZHRNUTIE:" in user_prompt and "UDALOSTI A TÉMY" in user_prompt:
+            baseline = "ŽSR modernizujú koridor Žilina–Košice, prvé úseky majú byť hotové v roku 2027 a rýchlosť stúpne na 160 km/h."
+            return LLMResponse(content=baseline, usage=TokenUsage(1, 1, 2), latency=0.01)
+
         # Baseline generator
         if "baseline" in self.model_name:
             content = (

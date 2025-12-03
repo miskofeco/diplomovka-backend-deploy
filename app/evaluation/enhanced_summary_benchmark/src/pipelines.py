@@ -221,9 +221,10 @@ class MamRefinePipeline(SummarizationPipeline):
                 "refine": [m.model_name for m in self.refine_models],
                 "rerank": self.rerank_model.model_name,
             }
-            baseline_summary, base_usage = await self.generate_baseline_summary(article, topic)
+            baseline_summary, base_usage, baseline_events = await self.generate_baseline_summary(article)
             usage.add(base_usage)
             artifacts["baseline_summary"] = baseline_summary
+            artifacts["baseline_events"] = baseline_events
 
             detection_result, detect_usage = await self.detect_inconsistencies_multi_llm(article, baseline_summary)
             usage.add(detect_usage)
@@ -256,17 +257,27 @@ class MamRefinePipeline(SummarizationPipeline):
             final_summary=final_summary
         )
 
-    async def generate_baseline_summary(self, article: str, topic: Optional[str]) -> Tuple[str, TokenUsage]:
-        system_prompt = MammRefinePrompts.BASELINE_SYSTEM
-        user_prompt = (
-            MammRefinePrompts.BASELINE_USER_WITH_TOPIC.format(topic=topic, document=article)
-            if topic
-            else MammRefinePrompts.BASELINE_USER_NO_TOPIC.format(document=article)
-        )
-        resp = await self.model.generate(system_prompt, user_prompt)
+    async def generate_baseline_summary(self, article: str) -> Tuple[str, TokenUsage, str]:
         usage = TokenUsage()
-        usage.add(resp.usage)
-        return resp.content, usage
+
+        # Step 1: Extract main events/topics
+        events_resp = await self.model.generate(
+            MammRefinePrompts.BASELINE_EVENTS_SYSTEM,
+            MammRefinePrompts.BASELINE_EVENTS_USER.format(document=article),
+        )
+        usage.add(events_resp.usage)
+        events_text = events_resp.content
+
+        # Step 2: Compose baseline summary using events + original text
+        summary_resp = await self.model.generate(
+            MammRefinePrompts.BASELINE_FROM_EVENTS_SYSTEM,
+            MammRefinePrompts.BASELINE_FROM_EVENTS_USER.format(
+                events=events_text,
+                document=article,
+            ),
+        )
+        usage.add(summary_resp.usage)
+        return summary_resp.content, usage, events_text
 
     async def detect_inconsistencies_multi_llm(
         self, article: str, summary: str
@@ -339,7 +350,6 @@ class MamRefinePipeline(SummarizationPipeline):
                 continue
 
             sentence = detection_result.sentences[idx]
-            topic_clause = f" on the topic '{topic}'" if topic else ""
             tasks = []
             critique_models_used: List[LLMClient] = []
             for model in self.critique_models:
@@ -348,7 +358,6 @@ class MamRefinePipeline(SummarizationPipeline):
                         model.generate(
                             MammRefinePrompts.CRITIQUE_SYSTEM,
                             MammRefinePrompts.CRITIQUE_USER.format(
-                                topic_clause=topic_clause,
                                 document=article,
                                 summary=summary,
                                 sentence=sentence,
@@ -402,7 +411,6 @@ class MamRefinePipeline(SummarizationPipeline):
         feedback_text = "\n\n".join(feedback_lines)
         artifacts["feedback"] = feedback_text
 
-        topic_clause = f" on the topic '{topic}'" if topic else ""
         tasks = []
         refine_models_used: List[LLMClient] = []
         for model in self.refine_models:
@@ -411,7 +419,6 @@ class MamRefinePipeline(SummarizationPipeline):
                     model.generate(
                         MammRefinePrompts.REFINE_SYSTEM,
                         MammRefinePrompts.REFINE_USER.format(
-                            topic_clause=topic_clause,
                             document=article,
                             summary=baseline_summary,
                             feedback=feedback_text,
@@ -483,14 +490,12 @@ class MamRefinePipeline(SummarizationPipeline):
             return candidates[0]["summary"], usage, {"rerank_winner_model": candidates[0]["model"]}
 
         best = candidates[0]
-        topic_value = topic if topic is not None else ""
         for contender in candidates[1:]:
             try:
                 resp = await self.rerank_model.generate(
                     MammRefinePrompts.SUMMARY_RERANK_SYSTEM,
                     MammRefinePrompts.SUMMARY_RERANK_USER.format(
                         document=article,
-                        topic=topic_value,
                         summary1=best["summary"],
                         summary2=contender["summary"],
                     ),

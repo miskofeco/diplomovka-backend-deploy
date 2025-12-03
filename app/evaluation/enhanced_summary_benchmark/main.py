@@ -21,9 +21,9 @@ from src.metrics import MetricsEngine
 load_dotenv()
 
 MAM_REFINE_MODEL_CONFIG = {
-    "detectors": ["gpt-4o", "gemini-2.5-flash"],
-    "critique": ["gpt-4o", "gemini-2.5-flash"],
-    "refine": ["gpt-4o", "gemini-2.5-flash"],
+    "detectors": ["gpt-4o-mini", "gemini-2.5-flash"],
+    "critique": ["gpt-4o-mini", "gemini-2.5-flash"],
+    "refine": ["gpt-4o", "gemini-2.5-flash","gpt-4o-mini","gemini-2.5-flash-lite"],
     "rerank": "gemini-2.5-flash",
 }
 

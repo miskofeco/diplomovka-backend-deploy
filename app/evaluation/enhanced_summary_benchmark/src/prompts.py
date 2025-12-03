@@ -78,16 +78,22 @@ class SlovakPrompts:
 
 
 class MammRefinePrompts:
-    BASELINE_SYSTEM = "Si stručný sumarizátor. Pracuješ s minimálnymi pokynmi a nevymýšľaš fakty, ktoré nie sú v texte."
-    BASELINE_USER_WITH_TOPIC = (
-        "Zhrň nasledujúci dokument k téme: '{topic}'.\n\n"
-        "Dokument:\n{document}\n\n"
-        "Napíš krátke zhrnutie zamerané na danú tému. Nepridávaj externé informácie."
+
+    BASELINE_EVENTS_SYSTEM = (
+        "Si analytik, ktorý rýchlo vyberá kľúčové udalosti a témy z textu bez pridania nových informácií."
     )
-    BASELINE_USER_NO_TOPIC = (
-        "Zhrň nasledujúci dokument do krátkeho odseku.\n"
-        "Nepridávaj externé informácie ani predpoklady.\n\n"
-        "Dokument:\n{document}"
+    BASELINE_EVENTS_USER = (
+        "Prečítaj si dokument nižšie a vypíš 3-7 hlavných udalostí a tém v stručných bodoch.\n"
+        "Zachovaj kľúčové osoby, miesta, čísla a časové údaje. Nepredpokladaj fakty mimo textu.\n\n"
+        "DOKUMENT:\n{document}"
+    )
+    BASELINE_FROM_EVENTS_SYSTEM = "Si stručný sumarizátor, ktorý píše presné a kompaktné zhrnutia na základe faktov."
+    BASELINE_FROM_EVENTS_USER = (
+        "Na základe udalostí/ tém a pôvodného dokumentu vytvor krátke zhrnutie v jednom odseku.\n"
+        "Použi informácie len z dokumentu, nepridávaj nič nové a zachovaj fakty, mená, čísla a čas.\n\n"
+        "UDALOSTI A TÉMY:\n{events}\n\n"
+        "DOKUMENT:\n{document}\n\n"
+        "ZHRNUTIE:"
     )
 
     DETECT_SYSTEM = "Si dôsledný kontrolór faktov, ktorý označí vety nepodložené dokumentom."
@@ -103,7 +109,7 @@ class MammRefinePrompts:
 
     CRITIQUE_SYSTEM = "Identifikuješ faktické chyby a navrhuješ presné opravy."
     CRITIQUE_USER = (
-        "Zhrnul som tento dokument{topic_clause}:\n\n"
+        "Zhrnul som tento dokument:\n\n"
         "{document}\n\n"
         "Zhrnutie:\n{summary}\n\n"
         "Problémová veta:\n{sentence}\n\n"
@@ -126,7 +132,7 @@ class MammRefinePrompts:
 
     REFINE_SYSTEM = "Si opatrný editor. Robíš len minimálne úpravy na opravu faktických chýb."
     REFINE_USER = (
-        "Zhrnul som nasledujúci dokument{topic_clause}:\n\n"
+        "Zhrnul som nasledujúci dokument:\n\n"
         "{document}\n\n"
         "Zhrnutie:\n{summary}\n\n"
         "Spätná väzba na zhrnutie:\n{feedback}\n\n"
@@ -137,7 +143,6 @@ class MammRefinePrompts:
     SUMMARY_RERANK_SYSTEM = "Vyberáš najvernejšie zhrnutie podľa dokumentu."
     SUMMARY_RERANK_USER = (
         "Dokument:\n{document}\n\n"
-        "Téma: {topic}\n\n"
         "Kandidátne zhrnutie 1:\n{summary1}\n\n"
         "Kandidátne zhrnutie 2:\n{summary2}\n\n"
         "Vyber zhrnutie, ktoré má najmenej faktických nezrovnalostí s dokumentom.\n"

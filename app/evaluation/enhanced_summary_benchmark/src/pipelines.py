@@ -275,6 +275,7 @@ class MamRefinePipeline(SummarizationPipeline):
                 events=events_text,
                 document=article,
             ),
+            assistant_prompt=MammRefinePrompts.BASELINE_FROM_EVENTS_ASSISTANT,
         )
         usage.add(summary_resp.usage)
         return summary_resp.content, usage, events_text

@@ -2,7 +2,7 @@ import abc
 import os
 import time
 import asyncio
-from typing import List
+from typing import List, Optional
 import openai
 import google.generativeai as genai
 from src.types import LLMResponse, TokenUsage
@@ -12,7 +12,13 @@ class LLMClient(abc.ABC):
         self.model_name = model_name
 
     @abc.abstractmethod
-    async def generate(self, system_prompt: str, user_prompt: str, json_mode: bool = False) -> LLMResponse:
+    async def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        json_mode: bool = False,
+        assistant_prompt: Optional[str] = None,
+    ) -> LLMResponse:
         pass
 
 class OpenAIClient(LLMClient):
@@ -20,16 +26,23 @@ class OpenAIClient(LLMClient):
         super().__init__(model_name)
         self.client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    async def generate(self, system_prompt: str, user_prompt: str, json_mode: bool = False) -> LLMResponse:
+    async def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        json_mode: bool = False,
+        assistant_prompt: Optional[str] = None,
+    ) -> LLMResponse:
         start = time.perf_counter()
         
         kwargs = {
             "model": self.model_name,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                *([{"role": "assistant", "content": assistant_prompt}] if assistant_prompt else []),
+                {"role": "user", "content": user_prompt},
             ],
-            "temperature": 0.3
+            "temperature": 0.3,
         }
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
@@ -52,11 +65,20 @@ class GeminiClient(LLMClient):
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         self.model = genai.GenerativeModel(model_name)
 
-    async def generate(self, system_prompt: str, user_prompt: str, json_mode: bool = False) -> LLMResponse:
+    async def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        json_mode: bool = False,
+        assistant_prompt: Optional[str] = None,
+    ) -> LLMResponse:
         start = time.perf_counter()
         
         # Gemini handles system prompts differently, simplifying here by prepending
-        full_prompt = f"SYSTEM: {system_prompt}\nUSER: {user_prompt}"
+        full_prompt = f"SYSTEM: {system_prompt}\n"
+        if assistant_prompt:
+            full_prompt += f"ASSISTANT (príklady): {assistant_prompt}\n"
+        full_prompt += f"USER: {user_prompt}"
         if json_mode:
             full_prompt += "\nReturn valid JSON."
 

@@ -1,4 +1,5 @@
 import logging
+import json
 import re
 import unicodedata
 from typing import Dict, List, Optional
@@ -8,13 +9,27 @@ from sqlalchemy import text
 from data.db import SessionLocal
 
 
+def _parse_json_field(value):
+    if value is None:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except Exception:
+            return None
+    return None
+
+
 def fetch_articles(limit: Optional[int], offset: Optional[int]) -> List[Dict]:
     """Return paginated list of articles ordered by recency."""
     session = SessionLocal()
     try:
         query = """
             SELECT 
-                id, title, intro, summary, url, category, tags, top_image, scraped_at
+                id, title, intro, summary, url, category, tags, top_image, scraped_at,
+                fact_check_results, summary_annotations
             FROM articles 
             ORDER BY scraped_at DESC
         """
@@ -39,6 +54,8 @@ def fetch_articles(limit: Optional[int], offset: Optional[int]) -> List[Dict]:
                 "tags": row[6],
                 "top_image": row[7],
                 "scraped_at": row[8].isoformat() if row[8] else None,
+                "fact_check_results": _parse_json_field(row[9]),
+                "summary_annotations": _parse_json_field(row[10]),
             }
             for row in result.fetchall()
         ]
@@ -55,7 +72,8 @@ def get_article_details_by_slug(article_slug: str) -> Optional[Dict]:
     session = SessionLocal()
     try:
         query = """
-            SELECT id, title, intro, summary, url, category, tags, top_image, scraped_at
+            SELECT id, title, intro, summary, url, category, tags, top_image, scraped_at,
+                   fact_check_results, summary_annotations
             FROM articles 
             WHERE LOWER(REPLACE(REPLACE(REPLACE(title, ' ', '-'), '.', ''), ',', '')) LIKE :slug
             LIMIT 1
@@ -94,6 +112,8 @@ def _row_to_article_dict(row, article_slug: str) -> Dict:
         "tags": row[6],
         "top_image": row[7],
         "scraped_at": row[8].isoformat() if row[8] else None,
+        "fact_check_results": _parse_json_field(row[9]),
+        "summary_annotations": _parse_json_field(row[10]),
         "slug": article_slug,
     }
 
@@ -104,7 +124,8 @@ def _fallback_match_by_slug(session, article_slug: str) -> Optional[Dict]:
     Helps when stored titles contain diacritics that were stripped on the frontend.
     """
     fallback_query = """
-        SELECT id, title, intro, summary, url, category, tags, top_image, scraped_at
+        SELECT id, title, intro, summary, url, category, tags, top_image, scraped_at,
+               fact_check_results, summary_annotations
         FROM articles
         ORDER BY scraped_at DESC
         LIMIT 1000

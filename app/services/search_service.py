@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -17,6 +18,19 @@ class SearchServiceError(Exception):
 
 class EmbeddingGenerationError(SearchServiceError):
     """Raised when embeddings cannot be generated."""
+
+
+def _parse_json_field(value):
+    if value is None:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except Exception:
+            return None
+    return None
 
 
 def search_articles(query: str, advanced: bool) -> List[Dict]:
@@ -57,7 +71,8 @@ def search_articles(query: str, advanced: bool) -> List[Dict]:
         search_query = f"%{query.lower()}%"
         sql_query = """
             SELECT DISTINCT
-                id, title, intro, summary, url, category, tags, top_image, scraped_at
+                id, title, intro, summary, url, category, tags, top_image, scraped_at,
+                fact_check_results, summary_annotations
             FROM articles 
             WHERE 
                 LOWER(title) LIKE :query OR
@@ -146,6 +161,7 @@ def find_similar_articles(article_id: str) -> List[Dict]:
         similarity_query = """
             SELECT 
                 a.id, a.title, a.intro, a.summary, a.url, a.category, a.tags, a.top_image, a.scraped_at,
+                a.fact_check_results, a.summary_annotations,
                 ae.embedding
             FROM articles a
             INNER JOIN article_embeddings ae ON a.id = ae.id
@@ -212,7 +228,7 @@ def _collect_similar_articles(
     processed_count = 0
 
     for row in result:
-        stored_embedding = row[9]
+        stored_embedding = row[11]
         if stored_embedding and len(stored_embedding) > 0:
             try:
                 similarity = cosine_similarity(base_embedding, stored_embedding)
@@ -245,7 +261,8 @@ def _collect_similar_articles(
 def _recent_articles(session, article_id: str, limit: int) -> List[Dict]:
     recent_query = """
         SELECT DISTINCT
-            a.id, a.title, a.intro, a.summary, a.url, a.category, a.tags, a.top_image, a.scraped_at
+            a.id, a.title, a.intro, a.summary, a.url, a.category, a.tags, a.top_image, a.scraped_at,
+            a.fact_check_results, a.summary_annotations
         FROM articles a
         WHERE a.id != :article_id
         ORDER BY a.scraped_at DESC
@@ -269,6 +286,8 @@ def _row_to_article_dict(row) -> Dict:
         "tags": row[6],
         "top_image": row[7],
         "scraped_at": row[8].isoformat() if row[8] else None,
+        "fact_check_results": _parse_json_field(row[9]),
+        "summary_annotations": _parse_json_field(row[10]),
     }
 
 

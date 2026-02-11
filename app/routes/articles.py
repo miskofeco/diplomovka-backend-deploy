@@ -1,7 +1,7 @@
 import logging
 from flask import Blueprint, jsonify, request
 
-from app.services import article_service, search_service
+from app.services import article_service, fact_check_service, search_service
 from app.services.search_service import (
     EmbeddingGenerationError,
     SearchServiceError,
@@ -69,3 +69,20 @@ def get_article_details(article_slug):
     except Exception as exc:
         logging.error("Error getting article details: %s", exc)
         return jsonify({"error": "Failed to get article details"}), 500
+
+
+@articles_bp.route("/api/articles/<article_id>/fact-check", methods=["POST"])
+def fact_check_article(article_id):
+    data = request.get_json() or {}
+    max_facts = data.get("max_facts", 5)
+
+    try:
+        result = fact_check_service.fact_check_article(article_id, max_facts=max_facts)
+        return jsonify(result)
+    except fact_check_service.FactCheckServiceError as exc:
+        message = str(exc)
+        status = 404 if message == "Article not found" else 500
+        return jsonify({"error": message}), status
+    except Exception as exc:
+        logging.error("Error fact-checking article: %s", exc, exc_info=True)
+        return jsonify({"error": "Fact-checking failed"}), 500

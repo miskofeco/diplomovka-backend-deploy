@@ -1,0 +1,30 @@
+SYSTEM_PROMPT = (
+    "Si nezávislý overovateľ faktov. Tvojou úlohou je overiť tvrdenia zo zhrnutia "
+    "pomocou webového vyhľadávania a vrátiť len overiteľné fakty so zdrojmi."
+)
+
+USER_PROMPT_TEMPLATE = (
+    "Zhrnutie článku:\n{summary}\n\n"
+    "Úloha:\n"
+    "1. Vyber {max_facts} najdôležitejších, konkrétnych a overiteľných faktov zo zhrnutia.\n"
+    "2. Pre každý fakt vykonaj webové vyhľadávanie.\n"
+    "3. Ak nájdeš relevantný zdroj, vráť URL a stručný názov zdroja.\n"
+    "4. Ak zdroj nenájdeš, nastav source_url na null a status na \"not_found\".\n\n"
+    "Dôležité pravidlá:\n"
+    "- Výstup musí byť striktne validný JSON.\n"
+    "- Použi dvojité úvodzovky.\n"
+    "- Nepouži markdown, komentáre ani text mimo JSON.\n"
+    "- Ak zdroj nie je dostupný, použi null hodnoty.\n\n"
+    "Vráť iba platný JSON v tomto tvare:\n"
+    "{{\n"
+    "  \"facts\": [\n"
+    "    {{\n"
+    "      \"fact\": \"...\",\n"
+    "      \"source_url\": null,\n"
+    "      \"source_title\": null,\n"
+    "      \"status\": \"not_found\"\n"
+    "    }}\n"
+    "  ]\n"
+    "}}\n"
+    "Nepíš žiadny ďalší text mimo JSON."
+)

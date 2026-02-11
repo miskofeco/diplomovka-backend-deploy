@@ -1,4 +1,5 @@
 import logging
+import json
 import re
 import unicodedata
 from collections import Counter
@@ -12,6 +13,19 @@ from app.utils.vectorstore import get_embedding
 
 
 TOKEN_PATTERN = re.compile(r"\b[\w][\w'-]*\b", flags=re.UNICODE)
+
+
+def _parse_json_field(value):
+    if value is None:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except Exception:
+            return None
+    return None
 
 
 def strip_diacritics(value: str) -> str:
@@ -178,6 +192,8 @@ def _row_to_article_dict(row) -> dict:
         "tags": row[6],
         "top_image": row[7],
         "scraped_at": row[8].isoformat() if row[8] else None,
+        "fact_check_results": _parse_json_field(row[9]),
+        "summary_annotations": _parse_json_field(row[10]),
     }
 
 
@@ -438,6 +454,7 @@ def semantic_query_search(
     articles_query = """
         SELECT 
             a.id, a.title, a.intro, a.summary, a.url, a.category, a.tags, a.top_image, a.scraped_at,
+            a.fact_check_results, a.summary_annotations,
             ae.embedding
         FROM articles a
         INNER JOIN article_embeddings ae ON a.id = ae.id
@@ -448,7 +465,7 @@ def semantic_query_search(
     candidates: list[dict] = []
 
     for row in result:
-        stored_embedding = row[9]
+        stored_embedding = row[11]
         if not stored_embedding:
             continue
 

@@ -1,6 +1,7 @@
 from flask import Flask
 
 from .articles import articles_bp
+from .health import health_bp
 from .orientations import orientations_bp
 from .scraping import scraping_bp
 
@@ -10,6 +11,7 @@ def register_routes(app: Flask) -> None:
     app.register_blueprint(articles_bp)
     app.register_blueprint(scraping_bp)
     app.register_blueprint(orientations_bp)
+    app.register_blueprint(health_bp)
 
 
 __all__ = ["register_routes"]

@@ -1,6 +1,7 @@
 import logging
 from flask import Blueprint, jsonify, request
 
+from app.routes.admin_guard import require_processing_admin
 from app.services import article_service, fact_check_service, search_service
 from app.services.search_service import (
     EmbeddingGenerationError,
@@ -73,6 +74,10 @@ def get_article_details(article_slug):
 
 @articles_bp.route("/api/articles/<article_id>/fact-check", methods=["POST"])
 def fact_check_article(article_id):
+    guard_response = require_processing_admin()
+    if guard_response:
+        return guard_response
+
     data = request.get_json() or {}
     max_facts = data.get("max_facts", 5)
 

@@ -1,6 +1,7 @@
 import logging
 from flask import Blueprint, jsonify, request
 
+from app.routes.admin_guard import require_processing_admin
 from app.services.scraping_service import (
     run_scraping,
     run_scraping_per_source,
@@ -12,6 +13,10 @@ scraping_bp = Blueprint("scraping", __name__)
 
 @scraping_bp.route("/api/scrape", methods=["POST"])
 def scrape_articles():
+    guard_response = require_processing_admin()
+    if guard_response:
+        return guard_response
+
     try:
         data = request.get_json() or {}
         max_articles_per_page = data.get("max_articles_per_page", 3)
@@ -29,6 +34,10 @@ def scrape_articles():
 
 @scraping_bp.route("/api/scrape-per-source", methods=["POST"])
 def scrape_articles_per_source():
+    guard_response = require_processing_admin()
+    if guard_response:
+        return guard_response
+
     try:
         data = request.get_json() or {}
         target_per_source = data.get("target_per_source", 5)
@@ -48,6 +57,10 @@ def scrape_articles_per_source():
 
 @scraping_bp.route("/api/scrape-with-fact-check", methods=["POST"])
 def scrape_articles_with_fact_check():
+    guard_response = require_processing_admin()
+    if guard_response:
+        return guard_response
+
     try:
         data = request.get_json() or {}
         max_total_articles = data.get("max_total_articles", 3)

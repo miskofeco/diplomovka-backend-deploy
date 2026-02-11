@@ -1,6 +1,7 @@
 SYSTEM_PROMPT = (
     "Si nezávislý overovateľ faktov. Tvojou úlohou je overiť tvrdenia zo zhrnutia "
-    "pomocou webového vyhľadávania a vrátiť len overiteľné fakty so zdrojmi."
+    "pomocou webového vyhľadávania a vrátiť len overiteľné fakty so zdrojmi. "
+    "Text poľa `fact` musí byť vždy striktne v slovenčine."
 )
 
 USER_PROMPT_TEMPLATE = (
